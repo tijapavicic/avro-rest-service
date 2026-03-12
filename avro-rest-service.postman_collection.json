@@ -1,0 +1,160 @@
+{
+  "info": {
+    "_postman_id": "8f7f4a0c-a6b3-4daa-97ef-7c80f5d8c6c2",
+    "name": "Avro REST Service",
+    "description": "Manual tests for the Avro REST service using Avro JSON media type.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "userId",
+      "value": "u-1"
+    }
+  ],
+  "item": [
+    {
+      "name": "Create User (Avro JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/avro+json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/avro+json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id\": null,\n  \"name\": \"Ada Lovelace\",\n  \"age\": 31,\n  \"createdAt\": 1710000000000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users"
+          ]
+        },
+        "description": "Creates a user event. If id is null, server generates one."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test('Response is JSON-like Avro payload', function () {",
+              "  pm.response.to.have.header('Content-Type');",
+              "});",
+              "",
+              "var data = pm.response.json();",
+              "pm.test('Response contains id', function () {",
+              "  pm.expect(data.id).to.exist;",
+              "});",
+              "",
+              "if (data.id) {",
+              "  pm.collectionVariables.set('userId', data.id);",
+              "}"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Get User By ID (Avro JSON)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/avro+json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/{{userId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "{{userId}}"
+          ]
+        },
+        "description": "Fetches the user created in the previous request."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "var data = pm.response.json();",
+              "pm.test('Returned id matches variable', function () {",
+              "  pm.expect(data.id).to.eql(pm.collectionVariables.get('userId'));",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Get Missing User (404)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/avro+json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/api/users/not-found-id",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "users",
+            "not-found-id"
+          ]
+        },
+        "description": "Negative test to verify 404 behavior."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 404', function () {",
+              "  pm.response.to.have.status(404);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    }
+  ]
+}
+
