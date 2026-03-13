@@ -1,0 +1,36 @@
+sequenceDiagram
+    autonumber
+    participant FE as sim-engine-frontend
+    participant SB as sim-engine-backend
+    participant MB as Message Broker
+    participant CE as calculation-engine
+    participant DB as Source Database
+    participant OS as Object Storage
+    participant SE as simulation-engine
+    participant TDB as Simulation DB
+
+    FE->>SB: POST /simulations {systemId, parameters}
+    SB-->>FE: 202 Accepted {jobId, status=SUBMITTED}
+
+    SB->>MB: Publish simulation.requested(jobId, systemId, correlationId)
+    MB-->>CE: Deliver simulation.requested
+
+    CE->>DB: Execute query with streaming cursor
+    DB-->>CE: Stream rows in batches
+
+    loop For each chunk
+        CE->>OS: Write result chunk (Parquet)
+    end
+
+    CE->>MB: Publish calculation.completed(jobId, chunk manifest)
+    MB-->>SE: Deliver calculation.completed
+
+    SE->>OS: Read chunk files
+    SE->>TDB: Bulk load target data
+    TDB-->>SE: Bulk load success
+
+    SE->>MB: Publish persistence.completed(jobId)
+    MB-->>SB: Deliver persistence.completed
+
+    SB-->>FE: Report COMPLETED via polling or SSE
+

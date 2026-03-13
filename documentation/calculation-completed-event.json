@@ -1,0 +1,24 @@
+{
+  "jobId": "JOB-20260313-0001",
+  "correlationId": "0f44d8d7-4a9c-4c0c-96a1-95d8f0b42101",
+  "systemId": "SYS-12345",
+  "status": "DATA_READY",
+  "resultFormat": "parquet",
+  "rowCount": 1000000,
+  "columnCount": 50,
+  "chunks": [
+    {
+      "chunkId": "part-0001",
+      "uri": "s3://calc-results/JOB-20260313-0001/part-0001.parquet",
+      "checksum": "sha256:abc123",
+      "rowCount": 250000
+    },
+    {
+      "chunkId": "part-0002",
+      "uri": "s3://calc-results/JOB-20260313-0001/part-0002.parquet",
+      "checksum": "sha256:def456",
+      "rowCount": 250000
+    }
+  ]
+}
+

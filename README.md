@@ -88,3 +88,17 @@ curl http://localhost:8080/api/users/u-1 \
 ## Schema
 
 Avro schema is defined in `src/main/avro/user_event.avsc` and code is generated at build time.
+
+## Specifications
+
+Repository specifications and design documents are indexed in:
+
+- [`spec/README.md`](spec/README.md)
+
+Simulation integration specifications created from the design discussion:
+
+- [`spec/spec-architecture-simulation-engine-integration.md`](spec/spec-architecture-simulation-engine-integration.md)
+- [`spec/spec-process-job-lifecycle.md`](spec/spec-process-job-lifecycle.md)
+- [`spec/spec-data-calculation-completed-event.md`](spec/spec-data-calculation-completed-event.md)
+- [`spec/spec-data-persistence-completed-event.md`](spec/spec-data-persistence-completed-event.md)
+

@@ -1,0 +1,30 @@
+flowchart LR
+    FE[sim-engine-frontend]
+    SB[sim-engine-backend]
+    MB[(Message Broker)]
+    CE[calculation-engine]
+    SDB[(Source Database)]
+    OBJ[(Object Storage / Result Chunks)]
+    SE[simulation-engine]
+    TDB[(Simulation DB)]
+
+    FE -- HTTPS REST: submit simulation --> SB
+    FE -- HTTPS GET or SSE: status --> SB
+
+    SB -- Async command: simulation.requested --> MB
+    MB --> CE
+
+    CE -- Native DB protocol / SQL --> SDB
+    SDB -- Streamed result set --> CE
+
+    CE -- Write Parquet chunks --> OBJ
+    CE -- Publish calculation.completed --> MB
+
+    MB --> SE
+    SE -- Read result chunks --> OBJ
+    SE -- Bulk load --> TDB
+
+    SE -- Publish persistence.completed --> MB
+    MB --> SB
+    SB -- Status/result metadata --> FE
+

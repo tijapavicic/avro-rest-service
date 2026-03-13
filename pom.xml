@@ -14,8 +14,12 @@
     <groupId>com.example</groupId>
     <artifactId>avro-rest-service</artifactId>
     <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
     <name>avro-rest-service</name>
     <description>Simple Spring Boot REST service using Avro payloads</description>
+    <modules>
+        <module>documentation</module>
+    </modules>
 
     <properties>
         <java.version>17</java.version>

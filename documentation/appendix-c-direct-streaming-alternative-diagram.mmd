@@ -1,0 +1,20 @@
+flowchart LR
+    FE[sim-engine-frontend]
+    SB[sim-engine-backend]
+    MB[(Message Broker)]
+    CE[calculation-engine]
+    SDB[(Source Database)]
+    SE[simulation-engine]
+    TDB[(Simulation DB)]
+
+    FE -- HTTPS REST --> SB
+    SB -- Async command --> MB
+    MB --> CE
+    CE -- Native DB protocol --> SDB
+    SDB -- Streamed rows --> CE
+    CE -- gRPC streaming or Arrow Flight --> SE
+    SE -- Bulk load --> TDB
+    SE -- Completion event --> MB
+    MB --> SB
+    SB -- Job status --> FE
+

@@ -1,0 +1,10 @@
+{
+  "jobId": "JOB-20260313-0001",
+  "correlationId": "0f44d8d7-4a9c-4c0c-96a1-95d8f0b42101",
+  "systemId": "SYS-12345",
+  "status": "COMPLETED",
+  "persistedRowCount": 1000000,
+  "targetDataset": "simulation_result",
+  "completedAt": "2026-03-13T10:42:00Z"
+}
+
