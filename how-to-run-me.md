@@ -72,6 +72,40 @@ java -jar calculation-engine/target/calculation-engine-0.0.1-SNAPSHOT.jar
 
 Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet).
 
+## 4.1) Run all components with Docker Compose (optional)
+
+From repo root:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+Default ports:
+
+- frontend: `http://localhost:3000`
+- backend: `http://localhost:8082`
+- calculation-engine: `http://localhost:8083`
+- simulation-engine: `http://localhost:8084`
+
+Quick backend smoke test:
+
+```zsh
+curl -i -X POST http://localhost:8082/api/simulations \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' \
+  -d '{"systemId":"SYS-001","requestedAt":"2026-03-15T10:00:00Z"}'
+```
+
+If local ports are busy, override host ports when starting:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 FRONTEND_PORT=13000 docker compose up -d
+```
+
 ### Terminal 4: Simulation engine
 
 ```zsh
@@ -85,7 +119,7 @@ Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet
 
 ## 5.1 Browser test (frontend -> backend)
 
-1. Start frontend and backend using section 4.
+1. Start frontend and backend using section 4 or section 4.1.
 2. Open `http://localhost:3000`.
 3. Click **Launch Simulation**.
 4. Confirm response panel shows:
@@ -131,6 +165,13 @@ For `calculation-engine` and `simulation-engine`, manual verification is current
 ## 6) Stop services
 
 If running in 4 terminals, use `Ctrl+C` in each terminal.
+
+If using Docker Compose:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+docker compose down
+```
 
 ## 7) Common issues
 

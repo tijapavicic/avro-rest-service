@@ -2,6 +2,11 @@
 
 Spring Boot multi-module service with a shared Avro model module and separate modules per main component.
 
+## Quick start guides
+
+- Junior walkthrough: `how-to-run-me.md`
+- Docker workflow: `docker-compose.yml`
+
 ## Modules
 
 - `avro-model`: shared Avro schema and `AvroHttpMessageConverter`
@@ -42,6 +47,35 @@ make test
 make run-all
 make status
 make stop-all
+```
+
+## Run with Docker Compose
+
+From the project root:
+
+```bash
+docker compose build
+docker compose up -d
+docker compose ps
+```
+
+Default local ports:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:8082`
+- Calculation engine: `http://localhost:8083`
+- Simulation engine: `http://localhost:8084`
+
+If a port is already in use, override host ports at runtime:
+
+```bash
+BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 FRONTEND_PORT=13000 docker compose up -d
+```
+
+Stop and remove containers:
+
+```bash
+docker compose down
 ```
 
 ## Important compile fix (`createdAt` type)
