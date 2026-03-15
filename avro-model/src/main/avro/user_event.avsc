@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "UserEvent",
+  "namespace": "com.example.avro.model",
+  "fields": [
+    { "name": "id", "type": ["null", "string"], "default": null },
+    { "name": "name", "type": "string" },
+    { "name": "age", "type": "int" },
+    { "name": "createdAt", "type": { "type": "long", "logicalType": "timestamp-millis" }, "default": 0 }
+  ]
+}
+

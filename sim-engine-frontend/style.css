@@ -1,0 +1,77 @@
+/* ── Reset ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Tokens ───────────────────────────────────────────── */
+:root {
+  --color-bg:       #0f1117;
+  --color-surface:  #1a1d27;
+  --color-border:   #2e3347;
+  --color-accent:   #4f8ef7;
+  --color-accent-h: #6aa3ff;
+  --color-success:  #3ecf8e;
+  --color-error:    #f87171;
+  --color-text:     #e2e8f0;
+  --color-muted:    #94a3b8;
+  --radius:         12px;
+  --font:           'Segoe UI', system-ui, sans-serif;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+body {
+  font-family: var(--font);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ───────────────────────────────────────────── */
+.app-header {
+  padding: 1rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+.logo {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--color-accent);
+}
+
+/* ── Main ─────────────────────────────────────────────── */
+.app-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+}
+
+/* ── Hero ─────────────────────────────────────────────── */
+.hero {
+  text-align: center;
+  max-width: 520px;
+  width: 100%;
+}
+.hero h1 {
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 0.6rem;
+}
+.subtitle {
+  color: var(--color-muted);
+  font-size: 0.95rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.6;
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+.app-footer {
+  text-align: center;
+  padding: 1rem;
+  color: var(--color-muted);
+  font-size: 0.78rem;
+  border-top: 1px solid var(--color-border);
+}
+

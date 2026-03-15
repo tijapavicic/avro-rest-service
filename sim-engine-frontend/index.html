@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sim Engine</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="module" src="components/simulation-launcher.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <span class="logo">⚙ Sim Engine</span>
+  </header>
+
+  <main class="app-main">
+    <section class="hero">
+      <h1>Simulation Control Panel</h1>
+      <p class="subtitle">Submit a job to the simulation backend and track its status in real time.</p>
+      <simulation-launcher backend-url="http://localhost:8082/api/simulations"></simulation-launcher>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>sim-engine-frontend &mdash; Web Components &mdash; 2026</small>
+  </footer>
+</body>
+</html>
+

@@ -1,28 +1,57 @@
 # Avro REST Service (Spring Boot)
 
-Simple Spring Boot REST service using Avro schemas for request and response payloads.
+Spring Boot multi-module service with a shared Avro model module and separate modules per main component.
+
+## Modules
+
+- `avro-model`: shared Avro schema and `AvroHttpMessageConverter`
+- `sim-engine-frontend`: HTTP API layer
+- `sim-engine-backend`: backend orchestration skeleton
+- `calculation-engine`: calculation processing skeleton
+- `simulation-engine`: simulation persistence skeleton
 
 ## Build and run
 
 ```bash
-mvn spring-boot:run
+mvn -B clean verify
 ```
 
-If you prefer to build a jar first:
+Run a specific component:
 
 ```bash
-mvn clean package
-java -jar target/avro-rest-service-0.0.1-SNAPSHOT.jar
+mvn -pl sim-engine-frontend spring-boot:run
+```
+
+Use the root `Makefile` for common tasks:
+
+```bash
+make build
+make test
+make run-frontend
+make run-backend
+make run-calculation
+make run-simulation
+make run-all
+make status
+make logs
+make stop-all
+
+#quick usage:
+make build
+make test
+make run-all
+make status
+make stop-all
 ```
 
 ## Important compile fix (`createdAt` type)
 
-`createdAt` in `src/main/avro/user_event.avsc` uses Avro logical type `timestamp-millis`.
+`createdAt` in `avro-model/src/main/avro/user_event.avsc` uses Avro logical type `timestamp-millis`.
 With Avro Java codegen, this maps to `java.time.Instant` in generated `UserEvent`, not `long`.
 
 If `UserController` compares `createdAt` to `0L` or calls `setCreatedAt(long)`, compilation fails.
 
-Use this pattern in `src/main/java/com/example/avro/api/UserController.java`:
+Use this pattern in `sim-engine-frontend/src/main/java/com/example/avro/api/UserController.java`:
 
 ```java
 if (event.getCreatedAt() == null) {
@@ -38,7 +67,7 @@ mvn generate-sources
 
 Generated file location:
 
-`target/generated-sources/avro/com/example/avro/model/UserEvent.java`
+`avro-model/target/generated-sources/avro/com/example/avro/model/UserEvent.java`
 
 ## Common build issues
 
@@ -62,9 +91,14 @@ Then refresh/reimport Maven in IntelliJ so `target/generated-sources/avro` is at
 ## Test
 
 ```bash
-mvn test
+mvn -B test
 ```
 
+## Run:
+
+```bash
+mvn spring-boot:run
+```
 ## Endpoints
 
 The service supports both binary Avro (`application/avro`) and Avro JSON encoding (`application/avro+json`).
@@ -85,9 +119,19 @@ curl http://localhost:8080/api/users/u-1 \
   -H 'Accept: application/avro+json'
 ```
 
+Quick run commands (per module):
+The `curl` examples below target `sim-engine-frontend`, which runs on `localhost:8080` by default.
+```shell
+mvn -pl sim-engine-frontend spring-boot:run
+mvn -pl sim-engine-backend spring-boot:run
+mvn -pl calculation-engine spring-boot:run
+mvn -pl simulation-engine spring-boot:run
+```
+
+
 ## Schema
 
-Avro schema is defined in `src/main/avro/user_event.avsc` and code is generated at build time.
+Avro schema is defined in `avro-model/src/main/avro/user_event.avsc` and code is generated at build time.
 
 ## Specifications
 

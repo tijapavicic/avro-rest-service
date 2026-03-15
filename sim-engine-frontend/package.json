@@ -1,0 +1,11 @@
+{
+  "name": "sim-engine-frontend",
+  "version": "0.0.1",
+  "description": "Web Components frontend for sim-engine",
+  "private": true,
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "serve": "npx serve . -l 3000"
+  }
+}
+
