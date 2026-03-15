@@ -1,0 +1,55 @@
+name: avro-rest-service
+
+services:
+  sim-engine-backend:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: sim-engine-backend
+    image: avro-rest-service/sim-engine-backend:local
+    container_name: sim-engine-backend
+    ports:
+      - "8082:8082"
+    restart: unless-stopped
+
+  calculation-engine:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: calculation-engine
+    image: avro-rest-service/calculation-engine:local
+    container_name: calculation-engine
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+    restart: unless-stopped
+
+  simulation-engine:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: simulation-engine
+    image: avro-rest-service/simulation-engine:local
+    container_name: simulation-engine
+    ports:
+      - "8084:8084"
+    environment:
+      SERVER_PORT: 8084
+    restart: unless-stopped
+
+  sim-engine-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    image: avro-rest-service/sim-engine-frontend:local
+    container_name: sim-engine-frontend
+    depends_on:
+      - sim-engine-backend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
