@@ -117,7 +117,7 @@ From repo root:
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
 make kafka-up
-make topic-create TOPIC=simulation.requests.v1
+make topic-create TOPIC=logging-test-topic
 make topic-list
 make e2e-smoke
 make e2e-smoke-down

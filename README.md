@@ -41,7 +41,7 @@ make status
 make logs
 make stop-all
 make kafka-up
-make topic-create TOPIC=simulation.requests.v1
+make topic-create TOPIC=logging-test-topic
 make topic-list
 make kafka-down
 make e2e-smoke
@@ -94,7 +94,7 @@ Kafka helper targets from `Makefile`:
 ```bash
 make kafka-up
 make kafka-logs
-make topic-create TOPIC=simulation.requests.v1
+make topic-create TOPIC=logging-test-topic
 make topic-list
 make kafka-down
 make e2e-smoke
@@ -114,7 +114,7 @@ Use `make e2e-smoke-down` to stop only the smoke-test services without tearing d
 Optional overrides:
 
 ```bash
-make e2e-smoke TOPIC=simulation.requests.v1 E2E_SYSTEM_ID=SYS-002 E2E_REQUESTED_AT=2026-03-16T12:00:00Z
+make e2e-smoke TOPIC=logging-test-topic E2E_SYSTEM_ID=SYS-002 E2E_REQUESTED_AT=2026-03-16T12:00:00Z
 ```
 
 Stop and remove containers:
