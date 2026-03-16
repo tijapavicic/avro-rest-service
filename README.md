@@ -77,6 +77,7 @@ Kafka bootstrap behavior in compose:
 
 - `kafka-init` one-shot service creates topic `logging-test-topic` at startup.
 - `sim-engine-backend` publishes structured Avro traffic logs to `logging-test-topic` for `/api/**` requests.
+- `sim-engine-backend` exposes only `health` and `info` actuator endpoints.
 
 If a port is already in use, override host ports at runtime:
 
@@ -105,6 +106,12 @@ Check that the topic exists:
 
 ```bash
 docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+```
+
+Check backend health endpoint:
+
+```bash
+curl -i http://localhost:8082/actuator/health
 ```
 
 `make e2e-smoke` starts `kafka`, `sim-engine-backend`, `calculation-engine`, and `simulation-engine`, ensures the topic exists, and sends one `POST /api/simulations` request.
@@ -166,6 +173,19 @@ Then refresh/reimport Maven in IntelliJ so `target/generated-sources/avro` is at
 - **Symptom:** errors like `bad operand types ... Instant and long` or `long cannot be converted to Instant`.
 - **Cause:** `timestamp-millis` in Avro schema maps to `java.time.Instant` in generated Java.
 - **Fix:** treat `createdAt` as `Instant` (null-check + `Instant.now()`), not as `long`.
+
+### 3) `400 Bad Request` for simulation submit
+
+- **Cause:** request validation is enforced for `POST /api/simulations`.
+- **Required fields:** `systemId` (non-blank), `requestedAt` (ISO-8601 timestamp).
+- **Fix:** send a payload like:
+
+```bash
+curl -i -X POST http://localhost:8082/api/simulations \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json' \
+  -d '{"systemId":"SYS-001","requestedAt":"2026-03-16T10:00:00Z"}'
+```
 
 ## Test
 

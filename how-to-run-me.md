@@ -105,6 +105,12 @@ curl -i -X POST http://localhost:8082/api/simulations \
   -d '{"systemId":"SYS-001","requestedAt":"2026-03-15T10:00:00Z"}'
 ```
 
+Quick actuator health check:
+
+```zsh
+curl -i http://localhost:8082/actuator/health
+```
+
 If local ports are busy, override host ports when starting:
 
 ```zsh
@@ -251,7 +257,7 @@ Use one command so they stay in sync.
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-./scripts/bump-version.sh --dry-run --allow-dirty 0.0.3-SNAPSHOT
+./scripts/bump-version.sh --dry-run --allow-dirty <next-version>
 ```
 
 ### Step 2: Real version bump
@@ -282,7 +288,7 @@ Use this short checklist before creating a commit/PR:
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-./scripts/bump-version.sh --allow-dirty 0.0.3-SNAPSHOT
+./scripts/bump-version.sh --allow-dirty <next-version>
 ```
 
 2. Update `CHANGELOG.md` under `## [Unreleased]` with your changes.

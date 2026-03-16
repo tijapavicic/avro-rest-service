@@ -9,6 +9,7 @@ import com.example.avro.model.TrafficLogEvent;
 import com.example.avro.service.TrafficLogPublisher;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
@@ -54,8 +55,8 @@ public class TrafficLoggingInterceptor implements HandlerInterceptor {
                 .setPath(request.getRequestURI())
                 .setStatusCode(response.getStatus())
                 .setDurationMs(durationMs)
-                .setCorrelationId(headerOrNull(request, "X-Correlation-Id"))
-                .setRequestId(headerOrNull(request, "X-Request-Id"))
+                .setCorrelationId(resolveContextValue(request, MdcRequestFilter.HEADER_CORRELATION_ID, MdcRequestFilter.MDC_CORRELATION_ID))
+                .setRequestId(resolveContextValue(request, MdcRequestFilter.HEADER_REQUEST_ID, MdcRequestFilter.MDC_REQUEST_ID))
                 .setClientIp(resolveClientIp(request))
                 .setUserAgent(headerOrNull(request, "User-Agent"))
                 .setSystemId(stringAttributeOrNull(request.getAttribute(SYSTEM_ID_ATTRIBUTE)))
@@ -100,7 +101,24 @@ public class TrafficLoggingInterceptor implements HandlerInterceptor {
         metadata.put("queryString", defaultString(request.getQueryString()));
         metadata.put("contentType", defaultString(request.getContentType()));
         metadata.put("error", ex == null ? "" : ex.getClass().getSimpleName());
+        metadata.put("traceId", defaultString(resolveContextValue(request, MdcRequestFilter.HEADER_TRACE_ID, MdcRequestFilter.MDC_TRACE_ID)));
         return metadata;
+    }
+
+    private String resolveContextValue(HttpServletRequest request, String headerName, String mdcKey) {
+        String headerValue = headerOrNull(request, headerName);
+        if (headerValue != null) {
+            return headerValue;
+        }
+        Object requestAttribute = request.getAttribute(mdcKey);
+        if (requestAttribute != null) {
+            String value = requestAttribute.toString();
+            if (!value.isBlank()) {
+                return value;
+            }
+        }
+        String mdcValue = MDC.get(mdcKey);
+        return (mdcValue == null || mdcValue.isBlank()) ? null : mdcValue;
     }
 
     private String defaultString(String value) {

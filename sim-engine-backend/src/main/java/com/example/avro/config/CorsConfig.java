@@ -1,5 +1,8 @@
 package com.example.avro.config;
 
+import java.util.Arrays;
+
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -11,15 +14,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
 
+    private final String[] allowedOrigins;
+
+    public CorsConfig(@Value("${app.cors.allowed-origins}") String allowedOriginsCsv) {
+        this.allowedOrigins = Arrays.stream(allowedOriginsCsv.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .toArray(String[]::new);
+    }
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(
-                        "http://localhost:3000",
-                        "http://localhost:8081",
-                        "http://127.0.0.1:3000",
-                        "http://127.0.0.1:8081"
-                )
+                .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "OPTIONS")
                 .allowedHeaders("Content-Type", "Accept", "X-Correlation-Id", "Idempotency-Key")
                 .maxAge(3600);
