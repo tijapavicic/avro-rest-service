@@ -117,6 +117,7 @@ make kafka-up
 make topic-create TOPIC=simulation.requests.v1
 make topic-list
 make e2e-smoke
+make e2e-smoke-down
 ```
 
 Kafka bootstrap values:
@@ -125,6 +126,7 @@ Kafka bootstrap values:
 - from host tools: `localhost:29092`
 
 `make e2e-smoke` does a quick end-to-end check by starting required services, creating the topic if needed, waiting for backend readiness, then calling `POST /api/simulations`.
+Run `make e2e-smoke-down` when you are done to stop the services started for smoke testing.
 
 ### Terminal 4: Simulation engine
 
@@ -221,4 +223,12 @@ mvn -B clean verify
 ```
 
 Then run frontend + backend and do browser test from section 5.1.
+
+## 9) Next steps: target executed successfully and stopped the expected containers.
+```shell
+cd /Users/copor/CodexProjects/avro-rest-service
+make -n e2e-smoke-down
+make e2e-smoke-down
+```
+
 

@@ -12,7 +12,7 @@ E2E_TIMEOUT_SEC ?= 90
 E2E_SYSTEM_ID ?= SYS-001
 E2E_REQUESTED_AT ?= 2026-03-15T10:00:00Z
 
-.PHONY: build test serve-frontend run-frontend run-backend run-calculation run-simulation run-all stop-all status logs clean-run kafka-up kafka-down kafka-logs topic-create topic-list e2e-smoke
+.PHONY: build test serve-frontend run-frontend run-backend run-calculation run-simulation run-all stop-all status logs clean-run kafka-up kafka-down kafka-logs topic-create topic-list e2e-smoke e2e-smoke-down
 
 build:
 	mvn -B clean verify
@@ -130,4 +130,7 @@ e2e-smoke:
 	fi; \
 	echo "Smoke test passed (HTTP $$http_code):"; \
 	cat /tmp/e2e-smoke-response.json
+
+e2e-smoke-down:
+	$(COMPOSE) stop sim-engine-backend calculation-engine simulation-engine $(KAFKA_SERVICE)
 

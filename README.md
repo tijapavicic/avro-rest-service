@@ -45,6 +45,7 @@ make topic-create TOPIC=simulation.requests.v1
 make topic-list
 make kafka-down
 make e2e-smoke
+make e2e-smoke-down
 
 #quick usage:
 make build
@@ -92,9 +93,12 @@ make topic-create TOPIC=simulation.requests.v1
 make topic-list
 make kafka-down
 make e2e-smoke
+make e2e-smoke-down
 ```
 
 `make e2e-smoke` starts `kafka`, `sim-engine-backend`, `calculation-engine`, and `simulation-engine`, ensures the topic exists, and sends one `POST /api/simulations` request.
+
+Use `make e2e-smoke-down` to stop only the smoke-test services without tearing down the full compose stack.
 
 Optional overrides:
 
