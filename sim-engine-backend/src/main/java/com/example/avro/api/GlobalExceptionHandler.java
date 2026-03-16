@@ -7,7 +7,7 @@ import java.util.UUID;
 
 import com.example.avro.config.MdcRequestFilter;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
+import org.springframework.context.MessageSourceResolvable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -15,10 +15,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
@@ -52,16 +54,27 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(ConstraintViolationException.class)
+    @ExceptionHandler(HandlerMethodValidationException.class)
     public ResponseEntity<ApiErrorResponse> handleConstraintViolation(
-            ConstraintViolationException ex,
+            HandlerMethodValidationException ex,
             HttpServletRequest request
     ) {
         Map<String, String> details = new LinkedHashMap<>();
-        ex.getConstraintViolations().forEach(violation ->
-                details.put(violation.getPropertyPath().toString(), violation.getMessage())
-        );
+        ex.getAllValidationResults().forEach(result -> {
+            String key = resolveValidationKey(result);
+            for (MessageSourceResolvable error : result.getResolvableErrors()) {
+                String message = error.getDefaultMessage();
+                if (message != null && !message.isBlank()) {
+                    details.putIfAbsent(key, message);
+                }
+            }
+        });
         return build(HttpStatus.BAD_REQUEST, "CONSTRAINT_VIOLATION", "Constraint violation", request, details);
+    }
+
+    private String resolveValidationKey(ParameterValidationResult result) {
+        String parameterName = result.getMethodParameter().getParameterName();
+        return (parameterName == null || parameterName.isBlank()) ? "request" : parameterName;
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)

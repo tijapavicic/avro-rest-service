@@ -2,14 +2,24 @@ package com.example.avro.api;
 
 import java.time.Instant;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 /**
  * Response payload returned after a simulation job is accepted.
  */
 public class SimulationResponse {
 
+    @NotBlank(message = "jobId must not be blank")
     private String jobId;
+
+    @NotBlank(message = "status must not be blank")
     private String status;
+
+    @NotBlank(message = "systemId must not be blank")
     private String systemId;
+
+    @NotNull(message = "acceptedAt is required")
     private Instant acceptedAt;
 
     public SimulationResponse() {}
