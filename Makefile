@@ -1,8 +1,14 @@
 SHELL := /bin/zsh
 
 RUN_DIR := .run
+COMPOSE ?= docker compose
+KAFKA_SERVICE ?= kafka
+KAFKA_BROKER ?= kafka:9092
+TOPIC ?= simulation.requests.v1
+PARTITIONS ?= 1
+REPLICATION_FACTOR ?= 1
 
-# .PHONY: build test run-frontend run-backend run-calculation run-simulation run-all stop-all status clean-run
+.PHONY: build test serve-frontend run-frontend run-backend run-calculation run-simulation run-all stop-all status logs clean-run kafka-up kafka-down kafka-logs topic-create topic-list
 
 build:
 	mvn -B clean verify
@@ -68,4 +74,26 @@ logs:
 
 clean-run:
 	rm -rf $(RUN_DIR)
+
+kafka-up:
+	$(COMPOSE) up -d $(KAFKA_SERVICE)
+
+kafka-down:
+	$(COMPOSE) stop $(KAFKA_SERVICE)
+
+kafka-logs:
+	$(COMPOSE) logs -f $(KAFKA_SERVICE)
+
+topic-create:
+	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/bitnami/kafka/bin/kafka-topics.sh \
+		--bootstrap-server $(KAFKA_BROKER) \
+		--create --if-not-exists \
+		--topic $(TOPIC) \
+		--partitions $(PARTITIONS) \
+		--replication-factor $(REPLICATION_FACTOR)
+
+topic-list:
+	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/bitnami/kafka/bin/kafka-topics.sh \
+		--bootstrap-server $(KAFKA_BROKER) \
+		--list
 

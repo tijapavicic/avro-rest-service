@@ -89,6 +89,7 @@ Default ports:
 - backend: `http://localhost:8082`
 - calculation-engine: `http://localhost:8083`
 - simulation-engine: `http://localhost:8084`
+- kafka broker: `localhost:29092`
 
 Quick backend smoke test:
 
@@ -105,6 +106,22 @@ If local ports are busy, override host ports when starting:
 cd /Users/copor/CodexProjects/avro-rest-service
 BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 FRONTEND_PORT=13000 docker compose up -d
 ```
+
+### 4.2) Kafka helper commands (optional, useful for local testing)
+
+From repo root:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+make kafka-up
+make topic-create TOPIC=simulation.requests.v1
+make topic-list
+```
+
+Kafka bootstrap values:
+
+- from other containers: `kafka:9092`
+- from host tools: `localhost:29092`
 
 ### Terminal 4: Simulation engine
 

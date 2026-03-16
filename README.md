@@ -40,6 +40,10 @@ make run-all
 make status
 make logs
 make stop-all
+make kafka-up
+make topic-create TOPIC=simulation.requests.v1
+make topic-list
+make kafka-down
 
 #quick usage:
 make build
@@ -77,6 +81,16 @@ Kafka bootstrap values in this compose setup:
 
 - From other containers: `kafka:9092`
 - From host machine tools: `localhost:29092`
+
+Kafka helper targets from `Makefile`:
+
+```bash
+make kafka-up
+make kafka-logs
+make topic-create TOPIC=simulation.requests.v1
+make topic-list
+make kafka-down
+```
 
 Stop and remove containers:
 
