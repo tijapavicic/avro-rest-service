@@ -270,3 +270,38 @@ Version format accepted by the script:
 - `X.Y.Z`
 - `X.Y.Z-SNAPSHOT`
 
+## 10) Before commit checklist
+
+Use this short checklist before creating a commit/PR:
+
+1. Bump version (if needed):
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+./scripts/bump-version.sh --allow-dirty 0.0.3-SNAPSHOT
+```
+
+2. Update `CHANGELOG.md` under `## [Unreleased]` with your changes.
+
+3. Run build + tests:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+mvn -B clean verify
+```
+
+4. If dependencies changed, run OWASP dependency scan:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+mvn -B org.owasp:dependency-check-maven:check
+```
+
+5. If your change touched Kafka/backend/compose flow, run smoke test:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+make e2e-smoke
+make e2e-smoke-down
+```
+

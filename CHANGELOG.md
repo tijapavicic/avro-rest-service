@@ -27,3 +27,15 @@ All notable changes to this project are documented in this file.
 - Verified compose rendering includes `kafka-init` and logging topic config.
 - Verified runtime flow by starting compose services, calling `POST /api/simulations`, and confirming `logging-test-topic` offsets increase.
 
+### Before Commit Checklist
+- Bump version in both `VERSION` and Maven modules:
+  - `./scripts/bump-version.sh --allow-dirty <next-version>`
+- Update this file (`CHANGELOG.md`) under `## [Unreleased]` with what changed.
+- Run quality gates:
+  - `mvn -B clean verify`
+- If dependencies changed, run OWASP dependency check:
+  - `mvn -B org.owasp:dependency-check-maven:check`
+- Smoke test local stack when Kafka/compose/backend flow changes:
+  - `make e2e-smoke`
+  - `make e2e-smoke-down`
+
