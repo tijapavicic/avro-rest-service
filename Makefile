@@ -89,7 +89,7 @@ kafka-logs:
 	$(COMPOSE) logs -f $(KAFKA_SERVICE)
 
 topic-create:
-	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/bitnami/kafka/bin/kafka-topics.sh \
+	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/kafka/bin/kafka-topics.sh \
 		--bootstrap-server $(KAFKA_BROKER) \
 		--create --if-not-exists \
 		--topic $(TOPIC) \
@@ -97,7 +97,7 @@ topic-create:
 		--replication-factor $(REPLICATION_FACTOR)
 
 topic-list:
-	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/bitnami/kafka/bin/kafka-topics.sh \
+	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/kafka/bin/kafka-topics.sh \
 		--bootstrap-server $(KAFKA_BROKER) \
 		--list
 
@@ -109,7 +109,8 @@ e2e-smoke:
 	deadline=$$(($$(date +%s) + $(E2E_TIMEOUT_SEC))); \
 	ready=0; \
 	while [ $$(date +%s) -lt $$deadline ]; do \
-		if curl -sS -o /dev/null -w "%{http_code}" "$(E2E_BACKEND_URL)/api/simulations" | grep -Eq "404|405"; then \
+		http_code=$$(curl -sS -o /dev/null -w "%{http_code}" "$(E2E_BACKEND_URL)/api/simulations" || true); \
+		if [ "$$http_code" = "404" ] || [ "$$http_code" = "405" ]; then \
 			ready=1; break; \
 		fi; \
 		sleep 2; \
