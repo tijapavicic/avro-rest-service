@@ -7,8 +7,12 @@ KAFKA_BROKER ?= kafka:9092
 TOPIC ?= simulation.requests.v1
 PARTITIONS ?= 1
 REPLICATION_FACTOR ?= 1
+E2E_BACKEND_URL ?= http://localhost:8082
+E2E_TIMEOUT_SEC ?= 90
+E2E_SYSTEM_ID ?= SYS-001
+E2E_REQUESTED_AT ?= 2026-03-15T10:00:00Z
 
-.PHONY: build test serve-frontend run-frontend run-backend run-calculation run-simulation run-all stop-all status logs clean-run kafka-up kafka-down kafka-logs topic-create topic-list
+.PHONY: build test serve-frontend run-frontend run-backend run-calculation run-simulation run-all stop-all status logs clean-run kafka-up kafka-down kafka-logs topic-create topic-list e2e-smoke
 
 build:
 	mvn -B clean verify
@@ -96,4 +100,33 @@ topic-list:
 	$(COMPOSE) exec -T $(KAFKA_SERVICE) /opt/bitnami/kafka/bin/kafka-topics.sh \
 		--bootstrap-server $(KAFKA_BROKER) \
 		--list
+
+e2e-smoke:
+	@set -eu; \
+	$(COMPOSE) up -d $(KAFKA_SERVICE) sim-engine-backend calculation-engine simulation-engine; \
+	$(MAKE) topic-create TOPIC=$(TOPIC); \
+	echo "Waiting for backend at $(E2E_BACKEND_URL)/api/simulations ..."; \
+	deadline=$$(($$(date +%s) + $(E2E_TIMEOUT_SEC))); \
+	ready=0; \
+	while [ $$(date +%s) -lt $$deadline ]; do \
+		if curl -sS -o /dev/null -w "%{http_code}" "$(E2E_BACKEND_URL)/api/simulations" | grep -Eq "404|405"; then \
+			ready=1; break; \
+		fi; \
+		sleep 2; \
+	done; \
+	if [ $$ready -ne 1 ]; then \
+		echo "Backend did not become ready within $(E2E_TIMEOUT_SEC)s"; \
+		$(COMPOSE) ps; \
+		exit 1; \
+	fi; \
+	payload='{"systemId":"$(E2E_SYSTEM_ID)","requestedAt":"$(E2E_REQUESTED_AT)"}'; \
+	echo "POST $(E2E_BACKEND_URL)/api/simulations"; \
+	http_code=$$(curl -sS -o /tmp/e2e-smoke-response.json -w "%{http_code}" -X POST "$(E2E_BACKEND_URL)/api/simulations" -H "Content-Type: application/json" -H "Accept: application/json" -d "$$payload"); \
+	if [ "$$http_code" != "202" ]; then \
+		echo "Smoke test failed with HTTP $$http_code"; \
+		cat /tmp/e2e-smoke-response.json; \
+		exit 1; \
+	fi; \
+	echo "Smoke test passed (HTTP $$http_code):"; \
+	cat /tmp/e2e-smoke-response.json
 

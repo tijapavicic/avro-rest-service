@@ -116,12 +116,15 @@ cd /Users/copor/CodexProjects/avro-rest-service
 make kafka-up
 make topic-create TOPIC=simulation.requests.v1
 make topic-list
+make e2e-smoke
 ```
 
 Kafka bootstrap values:
 
 - from other containers: `kafka:9092`
 - from host tools: `localhost:29092`
+
+`make e2e-smoke` does a quick end-to-end check by starting required services, creating the topic if needed, waiting for backend readiness, then calling `POST /api/simulations`.
 
 ### Terminal 4: Simulation engine
 

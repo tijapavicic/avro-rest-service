@@ -44,6 +44,7 @@ make kafka-up
 make topic-create TOPIC=simulation.requests.v1
 make topic-list
 make kafka-down
+make e2e-smoke
 
 #quick usage:
 make build
@@ -90,6 +91,15 @@ make kafka-logs
 make topic-create TOPIC=simulation.requests.v1
 make topic-list
 make kafka-down
+make e2e-smoke
+```
+
+`make e2e-smoke` starts `kafka`, `sim-engine-backend`, `calculation-engine`, and `simulation-engine`, ensures the topic exists, and sends one `POST /api/simulations` request.
+
+Optional overrides:
+
+```bash
+make e2e-smoke TOPIC=simulation.requests.v1 E2E_SYSTEM_ID=SYS-002 E2E_REQUESTED_AT=2026-03-16T12:00:00Z
 ```
 
 Stop and remove containers:
