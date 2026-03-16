@@ -173,6 +173,22 @@ Then refresh/reimport Maven in IntelliJ so `target/generated-sources/avro` is at
 mvn -B test
 ```
 
+## Versioning
+
+Current project version is tracked in both `VERSION` and Maven `pom.xml` files.
+
+Use the helper script to bump both consistently:
+
+```bash
+./scripts/bump-version.sh 0.0.2-SNAPSHOT
+```
+
+Safe preview mode:
+
+```bash
+./scripts/bump-version.sh --dry-run --allow-dirty 0.0.2-SNAPSHOT
+```
+
 ## Run:
 
 ```bash
