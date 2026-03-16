@@ -9,8 +9,13 @@ services:
         MODULE_PATH: sim-engine-backend
     image: avro-rest-service/sim-engine-backend:local
     container_name: sim-engine-backend
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
       - "${BACKEND_PORT:-8082}:8082"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
   calculation-engine:
@@ -21,10 +26,14 @@ services:
         MODULE_PATH: calculation-engine
     image: avro-rest-service/calculation-engine:local
     container_name: calculation-engine
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
       - "${CALCULATION_PORT:-8083}:8083"
     environment:
       SERVER_PORT: 8083
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
   simulation-engine:
@@ -35,10 +44,14 @@ services:
         MODULE_PATH: simulation-engine
     image: avro-rest-service/simulation-engine:local
     container_name: simulation-engine
+    depends_on:
+      kafka:
+        condition: service_healthy
     ports:
       - "${SIMULATION_PORT:-8084}:8084"
     environment:
       SERVER_PORT: 8084
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
   sim-engine-frontend:

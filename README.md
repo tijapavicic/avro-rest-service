@@ -65,12 +65,18 @@ Default local ports:
 - Backend: `http://localhost:8082`
 - Calculation engine: `http://localhost:8083`
 - Simulation engine: `http://localhost:8084`
+- Kafka broker (host): `localhost:29092`
 
 If a port is already in use, override host ports at runtime:
 
 ```bash
-BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 FRONTEND_PORT=13000 docker compose up -d
+BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 FRONTEND_PORT=13000 KAFKA_PORT=39092 docker compose up -d
 ```
+
+Kafka bootstrap values in this compose setup:
+
+- From other containers: `kafka:9092`
+- From host machine tools: `localhost:29092`
 
 Stop and remove containers:
 
