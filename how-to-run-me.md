@@ -233,12 +233,3 @@ mvn -B clean verify
 ```
 
 Then run frontend + backend and do browser test from section 5.1.
-
-## 9) Next steps: target executed successfully and stopped the expected containers.
-```shell
-cd /Users/copor/CodexProjects/avro-rest-service
-make -n e2e-smoke-down
-make e2e-smoke-down
-```
-
-
