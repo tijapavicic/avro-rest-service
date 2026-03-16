@@ -58,7 +58,8 @@ Expected: static site available at `http://localhost:3000`.
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-java -jar sim-engine-backend/target/sim-engine-backend-0.0.1-SNAPSHOT.jar
+JAR="$(ls sim-engine-backend/target/sim-engine-backend-*.jar | grep -v '.jar.original' | head -n 1)"
+java -jar "$JAR"
 ```
 
 Expected: backend listening on port `8082`.
@@ -67,7 +68,8 @@ Expected: backend listening on port `8082`.
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-java -jar calculation-engine/target/calculation-engine-0.0.1-SNAPSHOT.jar
+JAR="$(ls calculation-engine/target/calculation-engine-*.jar | grep -v '.jar.original' | head -n 1)"
+java -jar "$JAR"
 ```
 
 Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet).
@@ -142,14 +144,15 @@ Run `make e2e-smoke-down` when you are done to stop the services started for smo
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-java -jar simulation-engine/target/simulation-engine-0.0.1-SNAPSHOT.jar
+JAR="$(ls simulation-engine/target/simulation-engine-*.jar | grep -v '.jar.original' | head -n 1)"
+java -jar "$JAR"
 ```
 
 Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet).
 
 ## 5) Manual testing
 
-## 5.1 Browser test (frontend -> backend)
+### 5.1 Browser test (frontend -> backend)
 
 1. Start frontend and backend using section 4 or section 4.1.
 2. Open `http://localhost:3000`.
@@ -161,7 +164,7 @@ Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet
 
 If button call fails, verify backend is running on `8082` and check CORS config in `sim-engine-backend/src/main/java/com/example/avro/config/CorsConfig.java`.
 
-## 5.2 API test with curl
+### 5.2 API test with curl
 
 ```zsh
 curl -i -X POST http://localhost:8082/api/simulations \
@@ -184,7 +187,7 @@ Expected:
 }
 ```
 
-## 5.3 Verify scaffold services started
+### 5.3 Verify scaffold services started
 
 For `calculation-engine` and `simulation-engine`, manual verification is currently startup-only:
 
@@ -214,7 +217,8 @@ Use the build-first flow and run the packaged jar:
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
 mvn -B clean verify
-java -jar sim-engine-backend/target/sim-engine-backend-0.0.1-SNAPSHOT.jar
+JAR="$(ls sim-engine-backend/target/sim-engine-backend-*.jar | grep -v '.jar.original' | head -n 1)"
+java -jar "$JAR"
 ```
 
 ### Issue: `Port 8082 was already in use`
@@ -234,7 +238,7 @@ mvn -B clean verify
 
 Then run frontend + backend and do browser test from section 5.1.
 
-## 9) How to bump project version (developers-friendly)
+## 9) How to bump project version (developer-friendly)
 
 This repo tracks version in two places:
 
@@ -254,7 +258,7 @@ cd /Users/copor/CodexProjects/avro-rest-service
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-./scripts/bump-version.sh --allow-dirty 0.0.3-SNAPSHOT
+./scripts/bump-version.sh --allow-dirty <next-version>
 ```
 
 ### Step 3: Verify what changed

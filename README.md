@@ -180,7 +180,7 @@ Current project version is tracked in both `VERSION` and Maven `pom.xml` files.
 Use the helper script to bump both consistently:
 
 ```bash
-./scripts/bump-version.sh 0.0.2-SNAPSHOT
+./scripts/bump-version.sh <next-version>
 ```
 
 Safe preview mode:
