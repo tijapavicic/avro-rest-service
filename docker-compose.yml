@@ -12,10 +12,13 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     ports:
       - "${BACKEND_PORT:-8082}:8082"
     environment:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_KAFKA_LOGGING_TOPIC: logging-test-topic
     restart: unless-stopped
 
   calculation-engine:
@@ -90,4 +93,17 @@ services:
       timeout: 5s
       retries: 10
     restart: unless-stopped
+
+  kafka-init:
+    image: apache/kafka:3.7.1
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logging-test-topic --partitions 1 --replication-factor 1
+    restart: "no"
 

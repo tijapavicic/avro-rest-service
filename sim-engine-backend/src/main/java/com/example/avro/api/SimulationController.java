@@ -3,6 +3,8 @@ package com.example.avro.api;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.example.avro.config.TrafficLoggingInterceptor;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,7 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class SimulationController {
 
     @PostMapping
-    public ResponseEntity<SimulationResponse> submit(@RequestBody SimulationRequest request) {
+    public ResponseEntity<SimulationResponse> submit(@RequestBody SimulationRequest request, HttpServletRequest httpRequest) {
+        httpRequest.setAttribute(TrafficLoggingInterceptor.SYSTEM_ID_ATTRIBUTE, request.getSystemId());
         String jobId = "JOB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         SimulationResponse response = new SimulationResponse(
                 jobId,

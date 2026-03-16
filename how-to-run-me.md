@@ -91,6 +91,9 @@ Default ports:
 - simulation-engine: `http://localhost:8084`
 - kafka broker: `localhost:29092`
 
+Compose also starts `kafka-init` (one-shot container) that creates topic `logging-test-topic`.
+`sim-engine-backend` publishes structured Avro traffic logs to this topic for API traffic.
+
 Quick backend smoke test:
 
 ```zsh
@@ -124,6 +127,13 @@ Kafka bootstrap values:
 
 - from other containers: `kafka:9092`
 - from host tools: `localhost:29092`
+
+Verify topic creation:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
+```
 
 `make e2e-smoke` does a quick end-to-end check by starting required services, creating the topic if needed, waiting for backend readiness, then calling `POST /api/simulations`.
 Run `make e2e-smoke-down` when you are done to stop the services started for smoke testing.

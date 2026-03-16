@@ -73,6 +73,11 @@ Default local ports:
 - Simulation engine: `http://localhost:8084`
 - Kafka broker (host): `localhost:29092`
 
+Kafka bootstrap behavior in compose:
+
+- `kafka-init` one-shot service creates topic `logging-test-topic` at startup.
+- `sim-engine-backend` publishes structured Avro traffic logs to `logging-test-topic` for `/api/**` requests.
+
 If a port is already in use, override host ports at runtime:
 
 ```bash
@@ -94,6 +99,12 @@ make topic-list
 make kafka-down
 make e2e-smoke
 make e2e-smoke-down
+```
+
+Check that the topic exists:
+
+```bash
+docker compose exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --list
 ```
 
 `make e2e-smoke` starts `kafka`, `sim-engine-backend`, `calculation-engine`, and `simulation-engine`, ensures the topic exists, and sends one `POST /api/simulations` request.
