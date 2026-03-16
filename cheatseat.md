@@ -169,3 +169,21 @@ Expected outcome for POST:
 | `calculation-engine` | Spring Boot | Calculation processing (scaffold) |
 | `simulation-engine` | Spring Boot | Persistence / simulation (scaffold) |
 
+## Version bump quick steps
+
+Use the helper script so `VERSION` and all Maven module versions are updated together.
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+
+# Preview only
+./scripts/bump-version.sh --dry-run --allow-dirty 0.0.3-SNAPSHOT
+
+# Apply
+./scripts/bump-version.sh --allow-dirty 0.0.3-SNAPSHOT
+
+# Verify
+git --no-pager status --short
+cat VERSION
+```
+

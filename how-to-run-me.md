@@ -233,3 +233,40 @@ mvn -B clean verify
 ```
 
 Then run frontend + backend and do browser test from section 5.1.
+
+## 9) How to bump project version (developers-friendly)
+
+This repo tracks version in two places:
+
+- `VERSION`
+- Maven `pom.xml` files (root + modules)
+
+Use one command so they stay in sync.
+
+### Step 1: Safe preview (no file changes)
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+./scripts/bump-version.sh --dry-run --allow-dirty 0.0.3-SNAPSHOT
+```
+
+### Step 2: Real version bump
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+./scripts/bump-version.sh --allow-dirty 0.0.3-SNAPSHOT
+```
+
+### Step 3: Verify what changed
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+git --no-pager status --short
+cat VERSION
+```
+
+Version format accepted by the script:
+
+- `X.Y.Z`
+- `X.Y.Z-SNAPSHOT`
+
