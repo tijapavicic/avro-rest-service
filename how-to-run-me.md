@@ -8,6 +8,7 @@ Current runnable components:
 
 - `sim-engine-frontend`: static web UI
 - `sim-engine-backend`: Spring Boot REST API (`POST /api/simulations`)
+- `large-payload-webflux`: Spring WebFlux large-payload API (`POST /api/payloads/ingest-gzip`, `POST /api/payloads/ingest-ndjson`)
 - `calculation-engine`: Spring Boot worker scaffold (starts, no public HTTP API yet)
 - `simulation-engine`: Spring Boot worker scaffold (starts, no public HTTP API yet)
 
@@ -74,6 +75,16 @@ java -jar "$JAR"
 
 Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet).
 
+### Terminal 3b: WebFlux large-payload API (parallel)
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+JAR="$(ls large-payload-webflux/target/large-payload-webflux-*.jar | grep -v '.jar.original' | head -n 1)"
+java -jar "$JAR"
+```
+
+Expected: WebFlux API listening on port `8085`.
+
 ## 4.1) Run all components with Docker Compose (optional)
 
 From repo root:
@@ -91,6 +102,7 @@ Default ports:
 - backend: `http://localhost:8082`
 - calculation-engine: `http://localhost:8083`
 - simulation-engine: `http://localhost:8084`
+- large-payload-webflux: `http://localhost:8085`
 - kafka broker: `localhost:29092`
 
 Compose also starts `kafka-init` (one-shot container) that creates topic `logging-test-topic`.
@@ -115,7 +127,7 @@ If local ports are busy, override host ports when starting:
 
 ```zsh
 cd /Users/copor/CodexProjects/avro-rest-service
-BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 FRONTEND_PORT=13000 docker compose up -d
+BACKEND_PORT=18082 CALCULATION_PORT=18083 SIMULATION_PORT=18084 WEBFLUX_PORT=18085 FRONTEND_PORT=13000 docker compose up -d
 ```
 
 ### 4.2) Kafka helper commands (optional, useful for local testing)
@@ -199,7 +211,7 @@ Expected:
 
 ### 5.2.1 Large gzip payload test
 
-`sim-engine-backend` also supports a streaming gzip endpoint for very large JSON bodies.
+Both `sim-engine-backend` (`8082`) and `large-payload-webflux` (`8085`) support a streaming gzip endpoint for very large JSON bodies.
 
 Relevant config in `sim-engine-backend/src/main/resources/application.properties`:
 
@@ -226,6 +238,8 @@ Expected:
 
 - HTTP `202 Accepted`
 - JSON response with `itemsProcessed`
+
+To call the WebFlux module instead, replace `8082` with `8085`.
 
 ### 5.2.2 NDJSON streaming test
 
@@ -255,6 +269,8 @@ Expected:
 
 - HTTP `202 Accepted`
 - JSON response with `itemsProcessed`
+
+To call the WebFlux module instead, replace `8082` with `8085`.
 
 ### 5.3 Verify scaffold services started
 

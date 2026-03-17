@@ -57,6 +57,20 @@ services:
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     restart: unless-stopped
 
+  large-payload-webflux:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: large-payload-webflux
+    image: avro-rest-service/large-payload-webflux:local
+    container_name: large-payload-webflux
+    ports:
+      - "${WEBFLUX_PORT:-8085}:8085"
+    environment:
+      SERVER_PORT: 8085
+    restart: unless-stopped
+
   sim-engine-frontend:
     build:
       context: .

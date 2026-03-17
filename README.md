@@ -14,6 +14,7 @@ Spring Boot multi-module service with a shared Avro model module and separate mo
 - `avro-model`: shared Avro schema and `AvroHttpMessageConverter`
 - `sim-engine-frontend`: HTTP API layer
 - `sim-engine-backend`: backend orchestration skeleton
+- `large-payload-webflux`: reactive large-payload ingestion API (parallel runtime)
 - `calculation-engine`: calculation processing skeleton
 - `simulation-engine`: simulation persistence skeleton
 
@@ -118,7 +119,12 @@ curl -i http://localhost:8082/actuator/health
 
 ## Large payload ingestion endpoints
 
-`sim-engine-backend` exposes two streaming endpoints for large payload transfer:
+Two modules can expose equivalent large-payload endpoints in parallel:
+
+- servlet implementation: `sim-engine-backend` (default `http://localhost:8082`)
+- reactive implementation: `large-payload-webflux` (default `http://localhost:8085`)
+
+Both expose:
 
 - `POST /api/payloads/ingest-gzip`
   - Headers: `Content-Type: application/json`, `Content-Encoding: gzip`
@@ -281,6 +287,7 @@ The `curl` examples below target `sim-engine-frontend`, which runs on `localhost
 ```shell
 mvn -pl sim-engine-frontend spring-boot:run
 mvn -pl sim-engine-backend spring-boot:run
+mvn -pl large-payload-webflux spring-boot:run
 mvn -pl calculation-engine spring-boot:run
 mvn -pl simulation-engine spring-boot:run
 ```

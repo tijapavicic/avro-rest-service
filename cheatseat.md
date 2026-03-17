@@ -40,6 +40,7 @@ Port map:
 | `sim-engine-backend` | Spring Boot REST | `8082` |
 | `calculation-engine` | Spring Boot | `8083` |
 | `simulation-engine` | Spring Boot | `8084` |
+| `large-payload-webflux` | Spring WebFlux | `8085` |
 
 Start everything in one command (background, logs to `.run/`):
 
@@ -87,6 +88,7 @@ lsof -nP -iTCP:8081 -sTCP:LISTEN
 lsof -nP -iTCP:8082 -sTCP:LISTEN
 lsof -nP -iTCP:8083 -sTCP:LISTEN
 lsof -nP -iTCP:8084 -sTCP:LISTEN
+lsof -nP -iTCP:8085 -sTCP:LISTEN
 ```
 
 ### Tail logs

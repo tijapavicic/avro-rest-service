@@ -20,6 +20,7 @@
     <modules>
         <module>avro-model</module>
         <module>sim-engine-backend</module>
+        <module>large-payload-webflux</module>
         <module>calculation-engine</module>
         <module>simulation-engine</module>
     </modules>
