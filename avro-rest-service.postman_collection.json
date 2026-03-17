@@ -154,6 +154,114 @@
         }
       ],
       "response": []
+    },
+    {
+      "name": "Ingest Large Payload (Gzip JSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Content-Encoding",
+            "value": "gzip"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "file",
+          "file": {
+            "src": "/tmp/payload_sample_iso.json.gz"
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payloads/ingest-gzip",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "payloads",
+            "ingest-gzip"
+          ]
+        },
+        "description": "Manual Postman test for the gzip-streaming endpoint. Generate a gzip file first, for example: `gzip -c spec/payload_sample_iso.json > /tmp/payload_sample_iso.json.gz`, then in Postman switch the request body file to that generated `.gz` file before sending."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 202', function () {",
+              "  pm.response.to.have.status(202);",
+              "});",
+              "",
+              "var data = pm.response.json();",
+              "pm.test('Response contains processed item count', function () {",
+              "  pm.expect(data.itemsProcessed).to.be.a('number');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
+    },
+    {
+      "name": "Ingest Large Payload (NDJSON)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/x-ndjson"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\"scenarionID\":\"550e8400-e29b-41d4-a716-446655440000\",\"systemId\":\"SIM-ENGINE-01\",\"date\":\"2026-03-17\"}\n{\"item1\":123,\"item2\":\"alpha\"}\n{\"item1\":456,\"item2\":\"beta\"}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/payloads/ingest-ndjson",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "payloads",
+            "ingest-ndjson"
+          ]
+        },
+        "description": "Manual Postman test for the NDJSON streaming endpoint. The first line is metadata, and each following line is one item object."
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Status is 202', function () {",
+              "  pm.response.to.have.status(202);",
+              "});",
+              "",
+              "var data = pm.response.json();",
+              "pm.test('Response contains processed item count', function () {",
+              "  pm.expect(data.itemsProcessed).to.eql(2);",
+              "});"
+            ]
+          }
+        }
+      ],
+      "response": []
     }
   ]
 }

@@ -94,6 +94,66 @@ class LargePayloadIngestControllerTest {
                 .andExpect(jsonPath("$.message", containsString("exceeds limit")));
     }
 
+    @Test
+    void shouldRejectMalformedGzipPayload() throws Exception {
+        mockMvc.perform(post("/api/payloads/ingest-gzip")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Content-Encoding", "gzip")
+                        .content("not-a-gzip-stream".getBytes(StandardCharsets.UTF_8)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PAYLOAD_VALIDATION_ERROR"));
+    }
+
+    @Test
+    void shouldAcceptValidNdjsonPayload() throws Exception {
+        String payload = """
+                {"scenarionID":"550e8400-e29b-41d4-a716-446655440000","systemId":"SIM-ENGINE-01","date":"2026-03-17"}
+                {"item1":1,"item2":"alpha"}
+                {"item1":2,"item2":"beta"}
+                """;
+
+        mockMvc.perform(post("/api/payloads/ingest-ndjson")
+                        .contentType("application/x-ndjson")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.scenarionID").value("550e8400-e29b-41d4-a716-446655440000"))
+                .andExpect(jsonPath("$.itemsProcessed").value(2));
+    }
+
+    @Test
+    void shouldAcceptValidNdjsonPayloadWhenGzipEncoded() throws Exception {
+        String payload = """
+                {"scenarionID":"550e8400-e29b-41d4-a716-446655440000","systemId":"SIM-ENGINE-01","date":"2026-03-17"}
+                {"item1":1,"item2":"alpha"}
+                {"item1":2,"item2":"beta"}
+                """;
+
+        mockMvc.perform(post("/api/payloads/ingest-ndjson")
+                        .contentType("application/x-ndjson")
+                        .header("Content-Encoding", "gzip")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(gzip(payload)))
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.itemsProcessed").value(2));
+    }
+
+    @Test
+    void shouldRejectNdjsonWhenMetadataLineIsMissing() throws Exception {
+        String payload = """
+                {"item1":1,"item2":"alpha"}
+                {"item1":2,"item2":"beta"}
+                """;
+
+        mockMvc.perform(post("/api/payloads/ingest-ndjson")
+                        .contentType("application/x-ndjson")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(payload))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("PAYLOAD_VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message", containsString("scenarionID")));
+    }
+
     private byte[] gzip(String value) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (GZIPOutputStream gzip = new GZIPOutputStream(outputStream)) {

@@ -6,6 +6,8 @@ Spring Boot multi-module service with a shared Avro model module and separate mo
 
 - Junior walkthrough: `how-to-run-me.md`
 - Docker workflow: `docker-compose.yml`
+- Manual payload test commands: `manual.test.commands.md`
+- Payload samples: `spec/payload_sample_iso.json`, `spec/payload_sample.ndjson`
 
 ## Modules
 
@@ -112,6 +114,46 @@ Check backend health endpoint:
 
 ```bash
 curl -i http://localhost:8082/actuator/health
+```
+
+## Large payload ingestion endpoints
+
+`sim-engine-backend` exposes two streaming endpoints for large payload transfer:
+
+- `POST /api/payloads/ingest-gzip`
+  - Headers: `Content-Type: application/json`, `Content-Encoding: gzip`
+  - Body: gzip-compressed JSON payload matching `spec/payload_sample_iso.json`
+- `POST /api/payloads/ingest-ndjson`
+  - Header: `Content-Type: application/x-ndjson`
+  - Body: NDJSON stream where the first line is metadata and each following line is one item
+
+Configurable limit:
+
+```properties
+app.payload.ingest.max-decompressed-bytes=1200000000
+```
+
+The same limit is applied to decompressed gzip bytes and streamed NDJSON bytes.
+
+Manual gzip test with `curl`:
+
+```bash
+gzip -c spec/payload_sample_iso.json > /tmp/payload_sample_iso.json.gz
+
+curl -i -X POST http://localhost:8082/api/payloads/ingest-gzip \
+  -H 'Content-Type: application/json' \
+  -H 'Content-Encoding: gzip' \
+  -H 'Accept: application/json' \
+  --data-binary @/tmp/payload_sample_iso.json.gz
+```
+
+Manual NDJSON test with `curl`:
+
+```bash
+curl -i -X POST http://localhost:8082/api/payloads/ingest-ndjson \
+  -H 'Content-Type: application/x-ndjson' \
+  -H 'Accept: application/json' \
+  --data-binary @spec/payload_sample.ndjson
 ```
 
 `make e2e-smoke` starts `kafka`, `sim-engine-backend`, `calculation-engine`, and `simulation-engine`, ensures the topic exists, and sends one `POST /api/simulations` request.

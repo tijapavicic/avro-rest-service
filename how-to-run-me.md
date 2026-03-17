@@ -158,6 +158,10 @@ Expected: app starts successfully (worker scaffold, no HTTP endpoint to call yet
 
 ## 5) Manual testing
 
+Quick copy-paste command file:
+
+- `manual.test.commands.md`
+
 ### 5.1 Browser test (frontend -> backend)
 
 1. Start frontend and backend using section 4 or section 4.1.
@@ -192,6 +196,65 @@ Expected:
   "acceptedAt": "2026-03-15T19:51:30.392151Z"
 }
 ```
+
+### 5.2.1 Large gzip payload test
+
+`sim-engine-backend` also supports a streaming gzip endpoint for very large JSON bodies.
+
+Relevant config in `sim-engine-backend/src/main/resources/application.properties`:
+
+```properties
+app.payload.ingest.max-decompressed-bytes=1200000000
+```
+
+This limit applies after gzip decompression.
+
+Create a gzip test file and send it:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+gzip -c spec/payload_sample_iso.json > /tmp/payload_sample_iso.json.gz
+
+curl -i -X POST http://localhost:8082/api/payloads/ingest-gzip \
+  -H 'Content-Type: application/json' \
+  -H 'Content-Encoding: gzip' \
+  -H 'Accept: application/json' \
+  --data-binary @/tmp/payload_sample_iso.json.gz
+```
+
+Expected:
+
+- HTTP `202 Accepted`
+- JSON response with `itemsProcessed`
+
+### 5.2.2 NDJSON streaming test
+
+For very large uploads, NDJSON is often easier to stream because items are sent one line at a time.
+
+File example in this repo:
+
+- `spec/payload_sample.ndjson`
+
+Send it with:
+
+```zsh
+cd /Users/copor/CodexProjects/avro-rest-service
+
+curl -i -X POST http://localhost:8082/api/payloads/ingest-ndjson \
+  -H 'Content-Type: application/x-ndjson' \
+  -H 'Accept: application/json' \
+  --data-binary @spec/payload_sample.ndjson
+```
+
+NDJSON format used here:
+
+- first line: metadata object with `scenarionID`, `systemId`, `date`
+- each next line: one item object with `item1`, `item2`
+
+Expected:
+
+- HTTP `202 Accepted`
+- JSON response with `itemsProcessed`
 
 ### 5.3 Verify scaffold services started
 

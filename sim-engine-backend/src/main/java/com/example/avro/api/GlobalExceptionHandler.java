@@ -45,7 +45,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiErrorResponse> handleMalformedJson(
-            HttpMessageNotReadableException ex,
             HttpServletRequest request
     ) {
         return build(
@@ -94,7 +93,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ApiErrorResponse> handleNotFound(NoResourceFoundException ex, HttpServletRequest request) {
+    public ResponseEntity<ApiErrorResponse> handleNotFound(HttpServletRequest request) {
         return build(HttpStatus.NOT_FOUND, "NOT_FOUND", "Requested resource was not found", request, Map.of());
     }
 
