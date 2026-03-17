@@ -1,0 +1,101 @@
+@startuml Simulation Engine Flowchart
+
+!theme blueprint
+skinparam componentStyle rectangle
+skinparam backgroundColor #F8F9FA
+skinparam defaultFontName Inter, Segoe UI, Roboto, Arial
+skinparam defaultFontSize 12
+skinparam defaultFontStyle bold
+skinparam defaultFontColor #1A1A1A
+skinparam componentFontColor #0D0D0D
+skinparam arrowFontColor #262626
+skinparam packageFontColor #0D0D0D
+skinparam queueFontColor #0D0D0D
+skinparam databaseFontColor #0D0D0D
+skinparam storageFontColor #0D0D0D
+skinparam linetype ortho
+skinparam padding 5
+skinparam nodesep 90
+skinparam ranksep 90
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowThickness 2
+
+title **Simulation Engine** - Component Architecture & Data Flow
+
+' Define layers
+package "Presentation Layer" #FFFFFF {
+    component [sim-engine-frontend] as frontend #4A90E2
+}
+
+package "API Layer" #FFFFFF {
+    component [sim-engine-backend] as backend #f9df82
+}
+
+package "Message Infrastructure" #FFFFFF {
+    queue "Message Broker" as broker #9eceee {
+        queue "simulation.requested" as reqTopic #5DADE2
+        queue "calculation.completed" as calcTopic #5DADE2
+        queue "persistence.completed" as persistTopic #5DADE2
+    }
+}
+
+package "Processing Layer" #FFFFFF {
+    component [calculation-engine] as calcEngine #f9df82
+    component [simulation-engine] as simEngine #f9df82
+}
+
+package "Data Layer" #FFFFFF {
+    database "Source Database" as sourceDB #23c6b7
+    storage "Object Storage" as objStorage #23c6b7
+    database "Simulation DB" as simDB #23c6b7
+}
+
+' Connections with simplified labels
+frontend --> backend: [1] POST /simulation
+frontend --> backend: [2] GET status
+
+backend --> reqTopic: [3] Publish
+
+reqTopic --> calcEngine: [4] Consume
+
+calcEngine --> sourceDB: [5] Query
+sourceDB --> calcEngine: [6] Stream data
+
+calcEngine --> objStorage: [7] Write Parquet
+
+calcEngine --> calcTopic: [8] Publish
+
+calcTopic --> simEngine: [9] Consume
+
+simEngine --> objStorage: [10] Read chunks
+
+simEngine --> simDB: [11] Bulk insert
+
+simEngine --> persistTopic: [12] Publish
+
+persistTopic --> backend: [13] Consume
+
+backend --> frontend: [14] Result
+
+' Flow annotations
+legend right
+  **Data Flow Sequence:**
+  1-2: User interaction (REST + polling)
+  3-4: Async command dispatch
+  5-6: Source data retrieval
+  7: Intermediate storage (chunked)
+  8-9: Calculation completion event
+  10-11: Result persistence
+  12-13: Status notification
+  14: User notification
+
+  **Key Benefits:**
+  • Decoupled processing stages
+  • Scalable chunk-based processing
+  • Async non-blocking operations
+  • Event-driven coordination
+end legend
+
+@enduml
+

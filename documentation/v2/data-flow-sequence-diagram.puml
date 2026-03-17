@@ -1,0 +1,81 @@
+@startuml Data Flow Architecture
+
+!define QUEUE_COLOR #LightBlue
+!define CONSUMER_COLOR #LightGreen
+!define ENGINE_COLOR #LightCoral
+!define DB_COLOR #LightGray
+
+skinparam backgroundColor white
+skinparam sequenceMessageAlign center
+
+title Large Payload Processing Architecture
+
+actor "simul-frontend" as fendront #LightYellow
+participant "simul-orchestrator" as orchestrator #Orange
+
+' Kafka Topics
+participant "processingNG\n(Kafka Topic)" as topicNG
+participant "processing\n(Kafka Topic)" as topicLegacy 
+
+' NG Queues
+participant "rr1-ng-queue" as ngQueue1 
+participant "rr2-ng-queue" as ngQueue2 
+participant "rr3-ng-queue" as ngQueue3 
+
+' Legacy Queues
+participant "rr1-queue" as queue1 #LightYellow
+participant "rr2-queue" as queue2 #LightYellow
+participant "rr3-queue" as queue3 #LightYellow
+
+' Consumers
+participant "processingNG-kafka-consumer" as consumerNG 
+participant "processing-kafka-consumer" as consumerLegacy 
+
+' External Engine
+participant "external-engine" as engine
+
+' Databases
+database "postgreNgDB" as dbNG #MediumPurple
+database "postgreDB" as dbLegacy #MediumPurple
+
+== Data Ingestion ==
+
+frontend -> orchestrator: HTTP Stream\n1GB Payload
+
+== Message Distribution ==
+
+orchestrator -> topicNG: Publish payload
+orchestrator -> topicLegacy: Publish payload
+
+topicNG --> ngQueue1: Route
+topicNG --> ngQueue2: Route
+topicNG --> ngQueue3: Route
+
+topicLegacy --> queue1: Route
+topicLegacy --> queue2: Route
+topicLegacy --> queue3: Route
+
+== Next-Gen Processing ==
+
+ngQueue1 -> consumerNG: Consume
+ngQueue2 -> consumerNG: Consume
+ngQueue3 -> consumerNG: Consume
+
+consumerNG -> engine: Forward payload\n(NG processing)
+engine -> dbNG: Persist data
+dbNG --> engine: Success
+engine --> consumerNG: HTTP 200 OK
+
+== Legacy Processing ==
+
+queue1 -> consumerLegacy: Consume
+queue2 -> consumerLegacy: Consume
+queue3 -> consumerLegacy: Consume
+
+consumerLegacy -> engine: Forward payload\n(Legacy processing)
+engine -> dbLegacy: Persist data
+dbLegacy --> engine: Success
+engine --> consumerLegacy: HTTP 200 OK
+
+@enduml
+

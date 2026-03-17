@@ -1,0 +1,113 @@
+@startuml Appendix C Direct Streaming Flowchart
+
+!theme plain
+skinparam componentStyle rectangle
+skinparam backgroundColor white
+skinparam defaultFontSize 11
+skinparam linetype ortho
+skinparam padding 5
+skinparam nodesep 80
+skinparam ranksep 80
+
+title Appendix C - Direct Streaming Alternative Architecture
+
+' Define layers
+package "Presentation Layer" {
+    component [sim-engine-frontend] as frontend #LightYellow
+    note right of frontend
+      - Submit simulation requests
+      - Poll job status
+    end note
+}
+
+package "API Layer" {
+    component [sim-engine-backend] as backend #23c6b7
+    note right of backend
+      - REST API endpoints
+      - Event publishing
+      - Status aggregation
+    end note
+}
+
+package "Message Infrastructure" {
+    queue "Message Broker" as broker #LightBlue {
+        queue "simulation.requested" as reqTopic
+        queue "calculation.completed" as calcTopic
+        queue "persistence.completed" as persistTopic
+    }
+}
+
+package "Processing Layer" {
+    component [calculation-engine] as calcEngine #LightGreen
+    note right of calcEngine
+      - Query source data
+      - Stream results directly
+      - No intermediate storage
+    end note
+
+    component [simulation-engine] as simEngine #23c6b7
+    note right of simEngine
+      - Receive streaming data
+      - Bulk insert to DB
+      - Publish completion
+    end note
+}
+
+package "Data Layer" {
+    database "Source Database" as sourceDB #LightGray
+
+    database "Simulation DB" as simDB #LightGray
+}
+
+' Connections with labels
+frontend -down-> backend: [1] HTTPS REST\nPOST /simulation
+
+backend -down-> reqTopic: [2] Publish\nsimulation.requested
+
+reqTopic -down-> calcEngine: [3] Consume
+
+calcEngine -down-> sourceDB: [4] SQL Query\n(Native protocol)
+sourceDB -up-> calcEngine: [5] Stream\nresult set
+
+calcEngine -right-> simEngine: [6] gRPC streaming\nor Arrow Flight\n(Direct stream)
+
+note on link
+  **Direct Streaming**
+  No object storage
+  needed
+end note
+
+simEngine -down-> simDB: [7] Bulk load\n(streaming)
+
+calcEngine -down-> calcTopic: [8] Publish\ncalculation.completed
+
+simEngine -down-> persistTopic: [9] Publish\npersistence.completed
+
+persistTopic -up-> backend: [10] Consume
+
+backend -up-> frontend: [11] Job status
+
+' Flow annotations
+legend right
+  **Data Flow Sequence:**
+  1-2: User interaction & async dispatch
+  3-5: Source data query & streaming
+  6: **Direct stream** (gRPC/Arrow Flight)
+  7: Streaming bulk load to database
+  8-9: Completion event publishing
+  10-11: Status notification
+
+  **Key Differences from Appendix A:**
+  • No object storage intermediate layer
+  • Direct streaming between engines
+  • Lower latency, reduced storage costs
+  • Tighter coupling between services
+
+  **Technology Options:**
+  • gRPC streaming (bidirectional)
+  • Apache Arrow Flight (columnar)
+  • Custom streaming protocol
+end legend
+
+@enduml
+

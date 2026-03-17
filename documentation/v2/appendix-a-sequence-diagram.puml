@@ -1,0 +1,86 @@
+@startuml Simulation Engine Sequence Diagram
+
+!define ASYNC_COLOR #LightBlue
+!define SYNC_COLOR #LightCoral
+!define DATA_COLOR #LightGreen
+!define EVENT_COLOR #Orange
+
+skinparam backgroundColor white
+skinparam sequenceMessageAlign center
+
+title Simulation Engine - Event-Driven Architecture Sequence
+
+actor "User" as user
+participant "sim-engine-frontend" as frontend #LightYellow
+participant "sim-engine-backend" as backend #23c6b7
+queue "Message Broker" as broker #LightYellow
+participant "calculation-engine" as calcEngine #LightGreen
+database "Source Database" as sourceDB #LightGray
+database "Object Storage\n(Result Chunks)" as objStorage #LightBlue
+participant "simulation-engine" as simEngine #23c6b7
+database "Simulation DB" as simDB #LightGray
+
+== Simulation Submission ==
+
+user -> frontend: Initiate simulation
+frontend -> backend: HTTPS REST\nPOST /simulation
+activate backend
+backend -> broker: Publish event:\n**simulation.requested**
+backend --> frontend: HTTP 202 Accepted\n(simulation_id)
+deactivate backend
+frontend -> backend: HTTPS GET\nPoll status
+note right of frontend: Periodic polling\nor SSE connection
+
+== Calculation Phase ==
+
+broker -> calcEngine: Consume:\n**simulation.requested**
+activate calcEngine
+
+calcEngine -> sourceDB: Native DB protocol\nSQL query
+activate sourceDB
+sourceDB --> calcEngine: Stream result set
+deactivate sourceDB
+
+calcEngine -> objStorage: Write Parquet chunks
+note right of calcEngine: Split large results\ninto manageable chunks
+
+calcEngine -> broker: Publish event:\n**calculation.completed**
+deactivate calcEngine
+
+== Persistence Phase ==
+
+broker -> simEngine: Consume:\n**calculation.completed**
+activate simEngine
+
+simEngine -> objStorage: Read result chunks
+activate objStorage
+objStorage --> simEngine: Parquet data
+deactivate objStorage
+
+simEngine -> simDB: Bulk load data
+activate simDB
+simDB --> simEngine: Load success
+deactivate simDB
+
+simEngine -> broker: Publish event:\n**persistence.completed**
+deactivate simEngine
+
+== Status Update ==
+
+broker -> backend: Consume:\n**persistence.completed**
+activate backend
+backend --> frontend: Status update\n(via polling or SSE)
+deactivate backend
+
+frontend --> user: Display results
+
+note over frontend, simDB
+  **Key Design Patterns:**
+  - Async event-driven architecture
+  - Chunked data processing for large datasets
+  - Decoupled computation and persistence
+  - Polling or SSE for status updates
+end note
+
+@enduml
+

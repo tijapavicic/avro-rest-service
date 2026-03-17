@@ -1,0 +1,85 @@
+@startuml Appendix C Direct Streaming Sequence
+
+!define ASYNC_COLOR #LightBlue
+!define SYNC_COLOR #LightCoral
+!define STREAM_COLOR #LightGreen
+!define EVENT_COLOR #Orange
+
+skinparam backgroundColor white
+skinparam sequenceMessageAlign center
+
+title Appendix C - Direct Streaming Alternative Architecture
+
+actor "User" as user
+participant "sim-engine-frontend" as frontend #LightYellow
+participant "sim-engine-backend" as backend #23c6b7
+queue "Message Broker" as broker #MediumPurple
+participant "calculation-engine" as calcEngine #LightGreen
+database "Source Database" as sourceDB #LightGray
+participant "simulation-engine" as simEngine #23c6b7
+database "Simulation DB" as simDB #LightGray
+
+== Simulation Submission ==
+
+user -> frontend: Initiate simulation
+frontend -> backend: HTTPS REST\nPOST /simulation
+activate backend
+backend -> broker: Publish:\n**simulation.requested**
+backend --> frontend: HTTP 202 Accepted\n(simulation_id)
+deactivate backend
+
+== Direct Streaming Phase ==
+
+broker -> calcEngine: Consume:\n**simulation.requested**
+activate calcEngine
+
+calcEngine -> sourceDB: Native DB protocol\nSQL query
+activate sourceDB
+sourceDB --> calcEngine: Stream result set
+deactivate sourceDB
+
+note over calcEngine, simEngine
+  **Key Difference:**
+  Direct streaming eliminates
+  intermediate object storage.
+  Uses gRPC streaming or
+  Apache Arrow Flight.
+end note
+
+calcEngine -> simEngine: gRPC streaming\nor Arrow Flight\n(streamed rows)
+activate simEngine
+
+simEngine -> simDB: Bulk load\n(streaming)
+activate simDB
+simDB --> simEngine: Load progress
+deactivate simDB
+
+simEngine -> broker: Publish:\n**persistence.completed**
+deactivate simEngine
+
+calcEngine -> broker: Publish:\n**calculation.completed**
+deactivate calcEngine
+
+== Status Update ==
+
+broker -> backend: Consume:\n**completion events**
+activate backend
+backend --> frontend: Job status update
+deactivate backend
+
+frontend --> user: Display results
+
+note over frontend, simDB
+  **Benefits:**
+  - No intermediate storage needed
+  - Lower latency (direct transfer)
+  - Reduced storage costs
+
+  **Tradeoffs:**
+  - Tighter coupling between services
+  - Requires stable network connection
+  - Less resilience to failures
+end note
+
+@enduml
+

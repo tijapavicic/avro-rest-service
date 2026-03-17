@@ -1,0 +1,109 @@
+@startuml Component Architecture
+scale 0.7
+!theme blueprint
+skinparam componentStyle rectangle
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter, Segoe UI, Roboto, Arial
+skinparam defaultFontSize 12
+skinparam defaultFontStyle bold
+skinparam defaultFontColor #1A1A1A
+skinparam componentFontColor #0D0D0D
+skinparam arrowFontColor #262626
+skinparam packageFontColor #0D0D0D
+skinparam queueFontColor #0D0D0D
+skinparam databaseFontColor #0D0D0D
+skinparam linetype ortho
+skinparam padding 3
+skinparam nodesep 60
+skinparam ranksep 60
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowThickness 1
+skinparam noteFontColor #0D0D0D
+
+title **Large Payload Processing** - Component Architecture
+
+package "Frontend Layer" #FFFFFF {
+    [simul-frontend] as frontend #7EB8F5
+}
+
+package "Orchestration Layer" #FFFFFF {
+    [simul-orchestrator] as orchestrator #5FE5D6
+}
+
+package "Message Broker" #FFFFFF {
+    queue "processingNG" as topicNG #85C1E9
+    queue "processing" as topicLegacy #85C1E9
+
+    package "NG Queue Group" #F8FCFF {
+        queue "rr1-ng-queue" as ngQ1 #AED9F7
+        queue "rr2-ng-queue" as ngQ2 #AED9F7
+        queue "rr3-ng-queue" as ngQ3 #AED9F7
+    }
+
+    package "Legacy Queue Group" #FFFAF0 {
+        queue "rr1-queue" as q1 #FBD89A
+        queue "rr2-queue" as q2 #FBD89A
+        queue "rr3-queue" as q3 #FBD89A
+    }
+}
+
+package "Consumer Layer" #FFFFFF {
+    [processingNG-kafka-consumer] as consumerNG #C7A2D6
+    [processing-kafka-consumer] as consumerLegacy #C7A2D6
+}
+
+package "Processing Layer" #FFFFFF {
+    [external-engine] as engine #7ED8A3
+    [external-engineNG] as engineNG #7ED8A3
+}
+
+package "Persistence Layer" #FFFFFF {
+    database "postgreNgDB" as dbNG #5FE5D6
+    database "postgreDB" as dbLegacy #5FE5D6
+}
+
+' Connections
+frontend ..down..> orchestrator: **[1]** HTTP Stream\n(1GB payload)
+orchestrator ..down..> topicNG: **[2a]** Publish
+orchestrator ..down..> topicLegacy: **[2b]** Publish
+
+topicNG ..down..> ngQ1
+topicNG ..down..> ngQ2
+topicNG ..down..> ngQ3
+
+topicLegacy ..down..> q1
+topicLegacy ..down..> q2
+topicLegacy ..down..> q3
+
+ngQ1 ..down..> consumerNG: Consume
+ngQ2 ..down..> consumerNG: Consume
+ngQ3 ..down..> consumerNG: Consume
+
+q1 ..down..> consumerLegacy: Consume
+q2 ..down..> consumerLegacy: Consume
+q3 ..down..> consumerLegacy: Consume
+
+consumerNG ..down..> engineNG: Forward\n(NG)
+consumerLegacy ..down..> engine: Forward\n(Legacy)
+
+engine ..down..> dbNG: Persist
+engine ..down..> dbLegacy: Persist
+
+'engine ..up..> consumerNG: 200 OK
+'engine ..up..> consumerLegacy: 200 OK
+
+note right of engine #FFF9E6
+  Returns HTTP 200 OK
+  on successful persistence
+end note
+legend right
+  |= Symbol |= Meaning |
+  | <#7EB8F5> | Frontend Components |
+  | <#5FE5D6> | Orchestration/Data |
+  | <#C7A2D6> | Consumers |
+  | <#7ED8A3> | Processing |
+  | Dotted lines | Async messaging |
+endlegend
+@enduml
+

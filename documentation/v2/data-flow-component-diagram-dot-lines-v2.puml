@@ -1,0 +1,192 @@
+@startuml Component Architecture - Improved
+scale 0.7
+!theme blueprint
+skinparam componentStyle rectangle
+skinparam backgroundColor transparent
+skinparam defaultFontName Inter, Segoe UI, Roboto, Arial
+skinparam defaultFontSize 12
+skinparam defaultFontStyle bold
+skinparam defaultFontColor #1A1A1A
+skinparam componentFontColor #0D0D0D
+skinparam arrowFontColor #262626
+skinparam packageFontColor #0D0D0D
+skinparam queueFontColor #0D0D0D
+skinparam databaseFontColor #0D0D0D
+skinparam linetype ortho
+skinparam padding 3
+skinparam nodesep 60
+skinparam ranksep 60
+skinparam shadowing false
+skinparam roundCorner 8
+skinparam ArrowThickness 1
+skinparam noteFontColor #0D0D0D
+
+title **Large Payload Processing - Improved** - With Cache & DLQ
+
+package "Frontend Layer" #FFFFFF {
+    [simul-frontend] as frontend #7EB8F5
+}
+
+package "Orchestration Layer" #FFFFFF {
+    [simul-orchestrator] as orchestrator #5FE5D6
+}
+
+package "Message Broker" #FFFFFF {
+    queue "processingNG" as topicNG #85C1E9
+    queue "processing" as topicLegacy #85C1E9
+    queue "payload.failed" as dlq #FFB6C1
+
+    package "NG Queue Group" #F8FCFF {
+        queue "rr1-ng-queue" as ngQ1 #AED9F7
+        queue "rr2-ng-queue" as ngQ2 #AED9F7
+        queue "rr3-ng-queue" as ngQ3 #AED9F7
+    }
+
+    package "Legacy Queue Group" #FFFAF0 {
+        queue "rr1-queue" as q1 #FBD89A
+        queue "rr2-queue" as q2 #FBD89A
+        queue "rr3-queue" as q3 #FBD89A
+    }
+}
+
+package "Caching Layer" #FFFFFF {
+    [Redis Cache] <<LRU Cache>> as cache #FFDAB9
+}
+
+package "Consumer Layer" #FFFFFF {
+    [processingNG-kafka-consumer] as consumerNG #C7A2D6
+    [processing-kafka-consumer] as consumerLegacy #C7A2D6
+}
+
+package "Processing Layer" #FFFFFF {
+    [external-engine] as engine #7ED8A3
+    [external-engineNG] as engineNG #7ED8A3
+}
+
+package "Persistence Layer" #FFFFFF {
+    database "postgreNgDB" as dbNG #5FE5D6
+    database "postgreDB" as dbLegacy #5FE5D6
+}
+
+' ==========================
+' MAIN DATA FLOW
+' ==========================
+frontend ..down..> orchestrator: **[1]** HTTP Stream\n(1GB payload)
+
+orchestrator ..down..> topicNG: **[2a]** Publish
+orchestrator ..down..> topicLegacy: **[2b]** Publish
+
+' Fan-out to partitions
+topicNG ..down..> ngQ1: **[3a]** Fan-out
+topicNG ..down..> ngQ2: **[3a]** Fan-out
+topicNG ..down..> ngQ3: **[3a]** Fan-out
+
+topicLegacy ..down..> q1: **[3b]** Fan-out
+topicLegacy ..down..> q2: **[3b]** Fan-out
+topicLegacy ..down..> q3: **[3b]** Fan-out
+
+' Consumers poll from partitions
+ngQ1 ..down..> consumerNG: **[4a]** Consume
+ngQ2 ..down..> consumerNG: **[4a]** Consume
+ngQ3 ..down..> consumerNG: **[4a]** Consume
+
+q1 ..down..> consumerLegacy: **[4b]** Consume
+q2 ..down..> consumerLegacy: **[4b]** Consume
+q3 ..down..> consumerLegacy: **[4b]** Consume
+
+' ==========================
+' CACHE INTEGRATION
+' ==========================
+consumerNG ..right..> cache: **[5a]** Check\nCache
+cache ..left..> consumerNG: Hit/Miss
+
+consumerLegacy ..right..> cache: **[5b]** Check\nCache
+cache ..left..> consumerLegacy: Hit/Miss
+
+' ==========================
+' PROCESSING FLOW
+' ==========================
+consumerNG ..down..> engineNG: **[6a]** Forward\n(NG)\nCache Miss
+
+consumerLegacy ..down..> engine: **[6b]** Forward\n(Legacy)\nCache Miss
+
+' ==========================
+' PERSISTENCE FLOW
+' ==========================
+engineNG ..down..> dbNG: **[7a]** Persist
+engine ..down..> dbLegacy: **[7b]** Persist
+
+' Update cache on success
+engineNG ..up..> cache: **[8a]** Update\nCache
+engine ..up..> cache: **[8b]** Update\nCache
+
+' ==========================
+' ERROR HANDLING - DLQ
+' ==========================
+consumerNG ..left..> dlq: **[X]** Max Retries\nExhausted
+consumerLegacy ..left..> dlq: **[X]** Permanent\nFailure
+
+' ==========================
+' NOTES
+' ==========================
+note right of cache #FFF9E6
+  **Caching Strategy**
+  • TTL: 15 minutes
+  • LRU eviction policy
+  • Key: hash(payloadId)
+  • Reduces duplicate processing
+  • Target hit ratio: 80%+
+
+  **Benefits:**
+  • Avoids redundant DB queries
+  • Reduces processing latency
+  • Handles duplicate messages
+end note
+
+note right of dlq #FFE4E1
+  **Dead Letter Queue**
+  • Max retries: 3 attempts
+  • Backoff: Exponential (30s, 90s, 270s)
+  • Triggers:
+    - Deserialization errors
+    - Business logic failures
+    - Persistent DB errors
+
+  **Monitoring:**
+  • Alert on depth > 10
+  • Daily manual review
+  • Replay capability
+end note
+
+note bottom of engine #FFF9E6
+  **Success Response:**
+  Returns HTTP 200 OK
+  on successful persistence
+  + updates cache
+end note
+
+note bottom of engineNG #FFF9E6
+  **Success Response:**
+  Returns HTTP 200 OK
+  on successful persistence
+  + updates cache
+end note
+
+' ==========================
+' LEGEND
+' ==========================
+legend right
+  |= **Symbol** |= **Meaning** |
+  | <#7EB8F5> | Frontend Components |
+  | <#5FE5D6> | Orchestration/Data |
+  | <#C7A2D6> | Consumers |
+  | <#7ED8A3> | Processing Engines |
+  | <#FFDAB9> | **Caching Layer** |
+  | <#FFB6C1> | **Dead Letter Queue** |
+  |= |= |
+  | Dotted lines | Async messaging |
+  | **[N]** | Processing sequence |
+  | **[X]** | Error path |
+endlegend
+
+@enduml
