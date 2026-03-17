@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.example.avro.config.MdcRequestFilter;
+import com.example.avro.service.PayloadTooLargeException;
+import com.example.avro.service.PayloadValidationException;
+import com.example.avro.service.UnsupportedPayloadEncodingException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.MessageSourceResolvable;
 import org.slf4j.Logger;
@@ -108,6 +111,30 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(PayloadValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handlePayloadValidation(
+            PayloadValidationException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.BAD_REQUEST, "PAYLOAD_VALIDATION_ERROR", ex.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(PayloadTooLargeException.class)
+    public ResponseEntity<ApiErrorResponse> handlePayloadTooLarge(
+            PayloadTooLargeException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.PAYLOAD_TOO_LARGE, "PAYLOAD_TOO_LARGE", ex.getMessage(), request, Map.of());
+    }
+
+    @ExceptionHandler(UnsupportedPayloadEncodingException.class)
+    public ResponseEntity<ApiErrorResponse> handleUnsupportedEncoding(
+            UnsupportedPayloadEncodingException ex,
+            HttpServletRequest request
+    ) {
+        return build(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_CONTENT_ENCODING", ex.getMessage(), request, Map.of());
+    }
+
     private ResponseEntity<ApiErrorResponse> build(
             HttpStatus status,
             String code,
@@ -164,4 +191,3 @@ public class GlobalExceptionHandler {
         return value == null ? null : value.toString();
     }
 }
-
