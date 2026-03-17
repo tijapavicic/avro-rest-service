@@ -1,0 +1,46 @@
+{
+  "type": "record",
+  "name": "ScenarioRequest",
+  "namespace": "com.example.avro.spec",
+  "fields": [
+    {
+      "name": "scenarionID",
+      "type": {
+        "type": "string",
+        "logicalType": "uuid"
+      }
+    },
+    {
+      "name": "systemId",
+      "type": "string"
+    },
+    {
+      "name": "date",
+      "type": {
+        "type": "int",
+        "logicalType": "date"
+      }
+    },
+    {
+      "name": "items",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "ScenarioItem",
+          "fields": [
+            {
+              "name": "item1",
+              "type": "int"
+            },
+            {
+              "name": "item2",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
+

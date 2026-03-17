@@ -25,3 +25,8 @@ This folder contains the project specifications created from the prior design di
 - Relative links should be preferred when referencing local specs and supporting artifacts.
 - Mermaid `.mmd` files are the source of truth for standalone diagrams.
 
+## Date Representation In Samples
+
+- `payload_sample_iso.json` uses an ISO-8601 date string (`YYYY-MM-DD`), which is human-readable and aligns with JSON Schema `format: date`.
+- `payload_sample.json` uses Avro `logicalType: "date"` encoded as an `int` (number of days since `1970-01-01`).
+- Both files represent the same business payload shape; only the date wire format differs.

@@ -1,0 +1,15 @@
+{
+  "scenarionID": "550e8400-e29b-41d4-a716-446655440000",
+  "systemId": "SIM-01",
+  "date": "2026-03-17",
+  "items": [
+    {
+      "item1": 123,
+      "item2": "alpha"
+    },
+    {
+      "item1": 456,
+      "item2": "beta"
+    }
+  ]
+}

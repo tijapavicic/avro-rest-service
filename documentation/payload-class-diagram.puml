@@ -1,0 +1,16 @@
+@startuml
+class Payload {
+  +scenarionID: UUID
+  +systemId: String
+  +date: Date
+  +items: List<Item>
+}
+
+class Item {
+  +item1: int
+  +item2: String
+}
+
+Payload "1" *-- "0..*" Item : items
+@enduml
+

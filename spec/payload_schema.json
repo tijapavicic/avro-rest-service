@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/scenario-request.schema.json",
+  "title": "Scenario Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["scenarionID", "systemId", "date", "items"],
+  "properties": {
+    "scenarionID": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Scenario identifier (UUID)."
+    },
+    "systemId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "System identifier."
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date in ISO-8601 format (YYYY-MM-DD)."
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item1", "item2"],
+        "properties": {
+          "item1": {
+            "type": "integer",
+            "description": "Integer value."
+          },
+          "item2": {
+            "type": "string",
+            "minLength": 1,
+            "description": "String value."
+          }
+        }
+      }
+    }
+  }
+}
