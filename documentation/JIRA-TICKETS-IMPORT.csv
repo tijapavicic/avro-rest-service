@@ -1,0 +1,183 @@
+Summary,Issue Type,Priority,Story Points,Sprint,Assignee,Description,Acceptance Criteria,Labels,Components,Epic Link
+"Bulk CSV Import Feature","Epic","High","55","","Team Lead","Implement production-ready bulk CSV import service that handles 500K+ rows with async processing, reactive streams, and comprehensive monitoring. Target: 500K rows in 35-70 seconds with constant 5-20MB memory.","- Handle CSV files up to 500MB
+- Process 500K rows in 35-70 seconds
+- Return 202 Accepted immediately
+- Support job status polling
+- Implement all 8 HTTP status codes
+- Provide comprehensive monitoring","bulk-import,reactive,mongodb,async","Backend",""
+
+"Project Setup & Module Structure","Story","Highest","5","Sprint 1","Backend Team Lead","Set up multi-module Maven project with producer and consumer modules, docker-compose for MongoDB, and verify build passes.","- Parent POM configured with Spring Boot 3.2.5
+- Producer module created with dependencies
+- Consumer module created with dependencies
+- Docker-compose configured with MongoDB
+- Build passes (mvn clean install)","setup,infrastructure,maven","Backend","EPIC-1"
+
+"Domain Model & Entities","Story","High","3","Sprint 1","Backend Developer 1","Create domain entities: ImportJob, ImportStatus enum, ImportResponse DTO, and DataRecord with 10 columns.","- ImportJob entity with all required fields
+- ImportStatus enum with 6 states
+- ImportResponse DTO for API responses
+- DataRecord entity with 10 columns
+- All entities annotated with @Document","domain-model,entities,mongodb","Backend","EPIC-1"
+
+"REST API Endpoints","Story","Highest","8","Sprint 1","Backend Developer 2","Implement REST API endpoints: POST /import/csv (202), GET /jobs/{id} (200/404), GET /jobs (200). Include all HTTP status codes.","- POST /api/v1/import/csv returns 202 Accepted
+- GET /api/v1/import/jobs/{id} returns 200 OK or 404
+- GET /api/v1/import/jobs returns 200 OK
+- All HTTP status codes implemented (202,200,400,404,413,429,503)
+- Swagger documentation generated","rest-api,webflux,http-status","Backend","EPIC-1"
+
+"File Validation Service","Story","High","5","Sprint 1","Backend Developer 1","Implement comprehensive file validation: size (max 500MB), content type (CSV only), filename sanitization (prevent path traversal).","- Validate file size (max 500MB)
+- Validate content type (text/csv only)
+- Sanitize filename (prevent path traversal)
+- Return appropriate HTTP status codes
+- Log validation failures","security,validation,file-upload","Backend","EPIC-1"
+
+"Job Management Service","Story","High","5","Sprint 1","Backend Developer 2","Implement service layer for job lifecycle: create, update progress, complete, fail, list jobs.","- Create jobs with PENDING status
+- Update job progress (processedRows, failedRows)
+- Complete jobs (COMPLETED or COMPLETED_WITH_ERRORS)
+- Fail jobs with error message
+- List jobs by user ID","service-layer,job-management,mongodb","Backend","EPIC-1"
+
+"Rate Limiting & Concurrency Control","Story","Medium","3","Sprint 1","Backend Developer 1","Implement rate limiting: max 10 concurrent jobs, return 429 when exceeded with Retry-After header.","- Max 10 concurrent jobs per server
+- Return 429 Too Many Requests when exceeded
+- Include Retry-After header
+- Configurable via application.yml","rate-limiting,concurrency,429","Backend","EPIC-1"
+
+"CSV Stream Processing","Story","Highest","8","Sprint 2","Backend Developer 3","Implement reactive CSV parsing with backpressure control. Target: 20-30K rows/sec with 5-20MB memory.","- Parse CSV line-by-line (reactive stream)
+- Memory usage constant (5-20MB)
+- Backpressure control automatic
+- Handle 500K+ rows efficiently
+- Throughput 20-30K rows/sec","csv-parsing,reactive,performance","Backend","EPIC-1"
+
+"Data Transformation Service","Story","High","5","Sprint 2","Backend Developer 1","Implement business logic transformation: normalize data, validate, set defaults, enrich metadata.","- Apply business rules to each record
+- Validate data quality
+- Normalize data formats
+- Set default values
+- Enrich with metadata","transformation,validation,business-logic","Backend","EPIC-1"
+
+"Batch Persistence Service","Story","Highest","8","Sprint 2","Backend Developer 2","Implement batch MongoDB persistence: 1000 records/batch, 3 concurrent batches, retry logic (3 attempts).","- Batch size: 1000 records
+- Concurrent writes: 3 batches at a time
+- Retry logic: 3 attempts with exponential backoff
+- Update job progress every batch
+- Handle transient DB errors","persistence,mongodb,resilience,batch","Backend","EPIC-1"
+
+"Async Processing Orchestrator","Story","Highest","8","Sprint 2","Backend Team Lead","Orchestrate complete async pipeline: Parse → Transform → Batch → Persist. Fire-and-forget pattern.","- Fire-and-forget pattern (return 202 immediately)
+- Complete pipeline: Parse → Transform → Batch → Persist
+- Update job status throughout lifecycle
+- Handle errors gracefully
+- Complete job with final status","orchestration,async,pipeline","Backend","EPIC-1"
+
+"Integration Testing","Story","High","5","Sprint 2","QA Engineer","Comprehensive integration tests: all HTTP status codes, success/error scenarios, real CSV files. Coverage > 80%.","- Test all HTTP status codes
+- Test success scenarios
+- Test error scenarios
+- Test with real CSV files
+- Code coverage > 80%","testing,integration-tests,quality","QA","EPIC-1"
+
+"Monitoring & Observability","Story","High","5","Sprint 2","Backend Developer 1","Add Micrometer metrics, Prometheus endpoint, custom metrics for CSV processing, health checks.","- Micrometer metrics integrated
+- Prometheus endpoint exposed
+- Custom metrics for CSV processing
+- Health checks configured
+- Alerting thresholds documented","monitoring,metrics,prometheus,observability","Backend","EPIC-1"
+
+"Documentation & Diagrams","Story","Medium","8","Sprint 2","Tech Writer","Create 5 UML diagrams (Sequence, Component, Class, Deployment, Activity), API docs, operational runbook.","- 5 UML diagrams (Sequence, Component, Class, Deployment, Activity)
+- API documentation
+- Operational runbook
+- Architecture decision records
+- README files","documentation,diagrams,plantuml","Documentation","EPIC-1"
+
+"Create parent POM with module definitions","Task","High","2","Sprint 1","Backend Team Lead","Add bulk-import-producer and bulk-import-consumer modules to parent POM. Configure Spring Boot 3.2.5 parent.","Parent POM builds successfully with both modules","setup,pom","Backend","STORY-1"
+
+"Create producer module structure","Task","High","2","Sprint 1","Backend Team Lead","Create producer module with pom.xml, Spring WebFlux, MongoDB Reactive, Commons CSV dependencies. Create package structure.","Producer module compiles with all dependencies","setup,producer","Backend","STORY-1"
+
+"Create consumer module structure","Task","Medium","1","Sprint 1","Backend Team Lead","Create consumer module with pom.xml and package structure.","Consumer module compiles","setup,consumer","Backend","STORY-1"
+
+"Configure docker-compose.yml","Task","High","1","Sprint 1","Backend Developer 1","Add MongoDB 7.0 service with health checks and volumes to docker-compose.yml.","MongoDB starts via docker-compose","docker,mongodb,infrastructure","Backend","STORY-1"
+
+"Create ImportJob entity","Task","High","1","Sprint 1","Backend Developer 1","Create ImportJob @Document entity with id, filename, userId, status, rows, timestamps.","ImportJob entity compiles with all fields","domain-model,entity","Backend","STORY-2"
+
+"Create ImportStatus enum","Task","Medium","0.5","Sprint 1","Backend Developer 1","Create ImportStatus enum: PENDING, PROCESSING, COMPLETED, COMPLETED_WITH_ERRORS, FAILED, CANCELLED.","ImportStatus enum with 6 states","domain-model,enum","Backend","STORY-2"
+
+"Create ImportResponse DTO","Task","Medium","0.5","Sprint 1","Backend Developer 1","Create ImportResponse DTO: jobId, status, message, statusUrl, timestamp.","ImportResponse DTO compiles","domain-model,dto","Backend","STORY-2"
+
+"Create DataRecord entity","Task","High","1","Sprint 1","Backend Developer 1","Create DataRecord @Document with 10 columns, importJobId, lineNumber, importedAt.","DataRecord entity with 10 columns","domain-model,entity","Backend","STORY-2"
+
+"Create BulkImportController","Task","Highest","3","Sprint 1","Backend Developer 2","Implement POST /api/v1/import/csv endpoint that validates file, creates job, returns 202 Accepted with job ID.","Upload endpoint returns 202 with job ID","rest-api,controller,202","Backend","STORY-3"
+
+"Implement job status endpoint","Task","High","2","Sprint 1","Backend Developer 2","Implement GET /api/v1/import/jobs/{jobId} that retrieves job from MongoDB, returns 200 OK or 404.","Status endpoint returns 200 or 404","rest-api,controller,200,404","Backend","STORY-3"
+
+"Implement job listing endpoint","Task","High","2","Sprint 1","Backend Developer 2","Implement GET /api/v1/import/jobs with optional userId filter. Return Flux<ImportJob>.","List endpoint returns jobs","rest-api,controller,200","Backend","STORY-3"
+
+"Add error handling & HTTP status codes","Task","High","1","Sprint 1","Backend Developer 2","Create GlobalExceptionHandler, map exceptions to status codes (400, 404, 413, 429, 503).","All HTTP error codes working","error-handling,http-status","Backend","STORY-3"
+
+"Create FileValidationService","Task","High","2","Sprint 1","Backend Developer 1","Create FileValidationService with methods: validateFileSize, validateContentType, validateFilename.","Validation service compiles","validation,service","Backend","STORY-4"
+
+"Implement size validation","Task","High","1","Sprint 1","Backend Developer 1","Check file size <= 500MB, throw FileTooLargeException if exceeded, map to 413.","Size validation returns 413 when exceeded","validation,413","Backend","STORY-4"
+
+"Implement content type validation","Task","High","1","Sprint 1","Backend Developer 1","Accept only text/csv, throw InvalidContentTypeException, map to 400.","Content type validation returns 400","validation,400","Backend","STORY-4"
+
+"Implement filename sanitization","Task","High","1","Sprint 1","Backend Developer 1","Check for ../ path traversal, remove special characters, throw SecurityException, map to 400.","Filename sanitization prevents path traversal","security,validation,400","Backend","STORY-4"
+
+"Create ImportJobService","Task","High","2","Sprint 1","Backend Developer 2","Create ImportJobService with methods: createJob, getJob, startProcessing, updateProgress, completeJob, failJob, listJobs.","Job service compiles with all methods","service,job-management","Backend","STORY-5"
+
+"Create ImportJobRepository","Task","Medium","1","Sprint 1","Backend Developer 2","Create ImportJobRepository extending ReactiveMongoRepository with custom queries.","Repository compiles and works","repository,mongodb","Backend","STORY-5"
+
+"Implement status transitions","Task","High","1","Sprint 1","Backend Developer 2","Implement status transitions: PENDING→PROCESSING→COMPLETED/FAILED.","Status transitions validated","service,state-machine","Backend","STORY-5"
+
+"Add MongoDB indexes","Task","Medium","1","Sprint 1","Backend Developer 2","Create indexes on: status, userId, createdAt, compound (userId, status).","Indexes created in MongoDB","mongodb,performance","Backend","STORY-5"
+
+"Implement concurrency check","Task","High","2","Sprint 1","Backend Developer 1","Count jobs with status PENDING or PROCESSING, reject if >= maxConcurrentJobs, return 429.","Concurrency check returns 429","rate-limiting,429","Backend","STORY-6"
+
+"Add configuration properties","Task","Medium","1","Sprint 1","Backend Developer 1","Add application.yml properties: max-concurrent-jobs, max-file-size, batch-size.","Configuration externalized","configuration,yaml","Backend","STORY-6"
+
+"Create CsvStreamProcessor","Task","Highest","4","Sprint 2","Backend Developer 3","Create CsvStreamProcessor using Apache Commons CSV, parse line-by-line reactively, buffer limit 10K.","CSV parsing works reactively","csv,reactive,parsing","Backend","STORY-7"
+
+"Implement backpressure handling","Task","High","2","Sprint 2","Backend Developer 3","Automatic throttling, pause parsing if downstream slow, monitor buffer size.","Backpressure controls memory","reactive,backpressure,performance","Backend","STORY-7"
+
+"Add CSV parsing error handling","Task","Medium","1","Sprint 2","Backend Developer 3","Skip invalid records, log parse errors, continue processing, track failed row count.","Error handling skips bad records","error-handling,resilience","Backend","STORY-7"
+
+"CSV performance optimization","Task","Medium","1","Sprint 2","Backend Developer 3","Tune buffer sizes, optimize CSV parser settings, add metrics. Target: 20-30K rows/sec.","Performance targets met","performance,optimization","Backend","STORY-7"
+
+"Create DataTransformationService","Task","High","2","Sprint 2","Backend Developer 1","Create service to transform records: normalize column1, calculate column10, format dates, set defaults.","Transformation service works","transformation,business-logic","Backend","STORY-8"
+
+"Implement validation rules","Task","High","2","Sprint 2","Backend Developer 1","Required field checks, data type validation, business rules, return validation errors.","Validation rules enforced","validation,business-rules","Backend","STORY-8"
+
+"Add metadata enrichment","Task","Medium","1","Sprint 2","Backend Developer 1","Set importJobId, lineNumber, importedAt timestamp, processingStatus on each record.","Metadata enriched","transformation,metadata","Backend","STORY-8"
+
+"Create DataPersistenceService","Task","Highest","3","Sprint 2","Backend Developer 2","Create service to persist batches: saveAll() with batch size 1000, concurrency 3.","Batch persistence works","persistence,mongodb,batch","Backend","STORY-9"
+
+"Implement retry logic","Task","High","2","Sprint 2","Backend Developer 2","Use Resilience4j Retry: 3 attempts, exponential backoff 2s/4s/8s, log attempts, fail after 3.","Retry logic handles transient errors","resilience,retry,error-handling","Backend","STORY-9"
+
+"Create DataRecordRepository","Task","Medium","1","Sprint 2","Backend Developer 2","Create ReactiveMongoRepository for DataRecord with saveAll, findByImportJobId, countByImportJobId.","Repository works with MongoDB","repository,mongodb","Backend","STORY-9"
+
+"Add progress tracking","Task","High","2","Sprint 2","Backend Developer 2","Update job.processedRows/failedRows after each batch, atomic updates to MongoDB.","Progress updates accurate","progress,job-tracking","Backend","STORY-9"
+
+"Create CsvProcessingOrchestrator","Task","Highest","4","Sprint 2","Backend Team Lead","Orchestrate complete pipeline: Parse→Transform→Batch→Persist, update job status, fire-and-forget.","Complete pipeline working","orchestration,async,pipeline","Backend","STORY-10"
+
+"Implement pipeline error handling","Task","High","2","Sprint 2","Backend Team Lead","Catch all exceptions, update job status to FAILED, log errors, graceful shutdown.","Error handling robust","error-handling,resilience","Backend","STORY-10"
+
+"Add metrics collection","Task","Medium","1","Sprint 2","Backend Team Lead","Record processing duration, count processed/failed records, track throughput, publish to Micrometer.","Metrics collecting","monitoring,metrics","Backend","STORY-10"
+
+"Implement fire-and-forget","Task","High","1","Sprint 2","Backend Team Lead","subscribeOn(Schedulers.boundedElastic()), return immediately, no client blocking.","Async processing verified","async,reactive","Backend","STORY-10"
+
+"Create integration test suite","Task","High","2","Sprint 2","QA Engineer","Create BulkImportControllerIntegrationTest with tests for all HTTP status codes.","All status codes tested","testing,integration","QA","STORY-11"
+
+"Create test data files","Task","Medium","1","Sprint 2","QA Engineer","Create test CSV files: small (10), medium (1K), large (10K), invalid (malformed).","Test data files created","testing,test-data","QA","STORY-11"
+
+"Add Postman collection","Task","Medium","1","Sprint 2","QA Engineer","Create Postman collection with upload, get status, list jobs requests and example responses.","Postman collection working","testing,postman,api","QA","STORY-11"
+
+"Performance testing","Task","High","1","Sprint 2","Backend Developer 3","Generate 500K row CSV, upload, measure time, verify memory, validate throughput.","Performance benchmarks met","testing,performance","Backend","STORY-11"
+
+"Add Micrometer dependency","Task","Medium","1","Sprint 2","Backend Developer 1","Add Micrometer and Prometheus registry dependencies to pom.xml.","Dependencies added","monitoring,dependencies","Backend","STORY-12"
+
+"Implement custom metrics","Task","High","2","Sprint 2","Backend Developer 1","Add metrics: csv.records.processed, csv.records.failed, csv.processing.duration, import.csv.upload.","Custom metrics working","monitoring,metrics,micrometer","Backend","STORY-12"
+
+"Configure actuator endpoints","Task","Medium","1","Sprint 2","Backend Developer 1","Configure application.yml to expose health, metrics, prometheus endpoints.","Actuator endpoints exposed","monitoring,actuator","Backend","STORY-12"
+
+"Add health checks","Task","Medium","1","Sprint 2","Backend Developer 1","Add MongoDB health indicator, disk space health, custom job queue health.","Health checks passing","monitoring,health-check","Backend","STORY-12"
+
+"Create UML diagrams","Task","High","4","Sprint 2","Tech Writer","Create 5 UML diagrams: Sequence, Component, Class, Deployment, Activity using PlantUML.","All 5 diagrams created","documentation,uml,plantuml","Documentation","STORY-13"
+
+"Write API documentation","Task","High","2","Sprint 2","Tech Writer","Create OpenAPI spec, endpoint descriptions, examples, HTTP status reference, curl examples.","API documentation complete","documentation,api,openapi","Documentation","STORY-13"
+
+"Create operational runbook","Task","Medium","1","Sprint 2","Tech Writer","Write deployment, monitoring, troubleshooting, configuration, performance tuning guides.","Runbook complete","documentation,operations","Documentation","STORY-13"
+
+"Write README files","Task","Medium","1","Sprint 2","Tech Writer","Create project overview, quick start, architecture summary, development guide, contribution guidelines.","README comprehensive","documentation,readme","Documentation","STORY-13"
+

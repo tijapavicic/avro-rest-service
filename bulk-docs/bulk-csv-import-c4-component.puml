@@ -1,0 +1,69 @@
+@startuml Bulk CSV Import - C4 Component Diagram
+scale 0.6
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!include DEVICONS/java.puml
+!include FONTAWESOME/database.puml
+
+LAYOUT_WITH_LEGEND()
+
+title C4 Component Diagram - Bulk CSV Import System
+
+Person(client, "Client User", "Uploads large CSV files for async processing")
+
+System_Boundary(bulk_import, "Bulk CSV Import System") {
+
+    Container_Boundary(producer, "Producer Module") {
+        Component(import_api, "Import API", "Spring REST Controller", "Accepts CSV uploads, returns 202 Accepted with job ID", $sprite="java")
+        Component(job_service, "Job Service", "Spring Service", "Manages import job lifecycle and status tracking", $sprite="java")
+        Component(validator, "File Validator", "Spring Service", "Validates CSV format and size constraints", $sprite="java")
+    }
+
+    Container_Boundary(consumer, "Consumer Module") {
+        Component(csv_processor, "CSV Stream Processor", "Reactive Processor", "Processes 500K+ rows with backpressure control", $sprite="java")
+        Component(transformer, "Data Transformer", "Spring Service", "Applies business rules to CSV data", $sprite="java")
+        Component(persistence, "Persistence Service", "Spring Service", "Batch writes to MongoDB (1000 records/batch)", $sprite="java")
+    }
+
+    ContainerDb(mongodb, "MongoDB", "NoSQL Database", "Stores job status and imported records", $sprite="database")
+}
+
+Rel(client, import_api, "Uploads CSV", "HTTP POST /api/v1/import/csv")
+Rel(import_api, validator, "Validates file", "sync")
+Rel(import_api, job_service, "Creates job", "sync")
+Rel(import_api, csv_processor, "Triggers processing", "async fire-and-forget")
+
+Rel(job_service, mongodb, "Reads/writes job status", "Reactive MongoDB")
+Rel(csv_processor, transformer, "Streams CSV rows", "Reactive Stream")
+Rel(transformer, persistence, "Validated records", "Flux<Record>")
+Rel(persistence, mongodb, "Batch inserts", "Reactive MongoDB")
+
+Rel(client, job_service, "Checks job status", "HTTP GET /api/v1/import/jobs/{id}")
+
+SHOW_LEGEND()
+
+note right of import_api
+  **HTTP Status Codes:**
+  • 202 Accepted (job created)
+  • 400 Bad Request
+  • 413 Payload Too Large
+  • 429 Too Many Requests
+end note
+
+note right of csv_processor
+  **Processing:**
+  • 20-30K rows/sec
+  • Backpressure enabled
+  • Memory efficient streaming
+end note
+
+note bottom of mongodb
+  **Collections:**
+  • import_jobs (status tracking)
+  • data_records (CSV data)
+end note
+
+@enduml
+
