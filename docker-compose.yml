@@ -121,3 +121,44 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logging-test-topic --partitions 1 --replication-factor 1
     restart: "no"
 
+  # MongoDB for bulk import service
+  mongodb:
+    image: mongo:7.0
+    container_name: bulk-import-mongodb
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: bulk_import
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Bulk import producer service
+  bulk-import-producer:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: bulk-import-producer
+    image: avro-rest-service/bulk-import-producer:local
+    container_name: bulk-import-producer
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "${BULK_IMPORT_PORT:-8090}:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bulk_import
+      BULK_IMPORT_MAX_FILE_SIZE: 524288000
+      BULK_IMPORT_BATCH_SIZE: 1000
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+    driver: local
+

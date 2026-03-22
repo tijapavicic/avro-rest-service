@@ -1,0 +1,310 @@
+@startuml Bulk CSV Import - Activity Diagram
+scale 0.3
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+title <size:16><b>Bulk CSV Import - Activity Flow</b></size>\n<size:12>Complete Processing Workflow | 500K Rows CSV</size>
+
+|#F0F8FF|Client|
+start
+:User prepares CSV file\n(500K rows, 10 columns);
+
+:Send HTTP POST request\nto /api/v1/import/csv\nContent-Type: multipart/form-data;
+
+|#F0F8FF|Producer Module|
+
+:Receive multipart request;
+
+partition "Validation Phase" #FFE6A8 {
+    :Validate file size;
+
+    if (File size > 500MB?) then (<font color=red>yes</font>)
+        :Return <b><font color=red>413 Payload Too Large</font></b>;
+        stop
+    else (<font color=green>no</font>)
+        :Validate content type;
+
+        if (Content-Type valid?) then (<font color=red>no</font>)
+            :Return <b><font color=red>400 Bad Request</font></b>\nInvalid content type;
+            stop
+        else (<font color=green>yes</font>)
+            :Sanitize filename;
+
+            if (Filename contains ".."?) then (<font color=red>yes</font>)
+                :Return <b><font color=red>400 Bad Request</font></b>\nPath traversal detected;
+                stop
+            else (<font color=green>no</font>)
+                :File validated ✓;
+            endif
+        endif
+    endif
+}
+
+partition "Rate Limiting" #FFF9C4 {
+    :Check concurrent jobs;
+
+    if (Jobs > 10?) then (<font color=red>yes</font>)
+        :Return <b><font color=red>429 Too Many Requests</font></b>\nRetry-After: 60;
+        stop
+    else (<font color=green>no</font>)
+        :Rate check passed ✓;
+    endif
+}
+
+partition "Job Creation" #A8D5FF {
+    :Check MongoDB connection;
+
+    if (MongoDB available?) then (<font color=red>no</font>)
+        :Return <b><font color=red>503 Service Unavailable</font></b>\nRetry-After: 120;
+        stop
+    else (<font color=green>yes</font>)
+        :Create ImportJob entity\nstatus = PENDING;
+
+        :Insert into import_jobs\ncollection;
+
+        :Generate Job ID\n"65f1a2b3c4d5e6f7890abcde";
+    endif
+}
+
+:Trigger async processing\n(Fire & Forget);
+
+split
+    :Return to client immediately;
+
+    |#F0F8FF|Client|
+    :<b><font color=green>202 Accepted</font></b>\nReceive Job ID + Status URL;
+
+    :Client can poll status anytime;
+
+    repeat
+        :Wait N seconds;
+
+        :Send GET /jobs/{jobId};
+
+        |#F0F8FF|Producer Module|
+        :Query import_jobs by ID;
+
+        if (Job found?) then (<font color=green>yes</font>)
+            |#F0F8FF|Client|
+            :<b><font color=green>200 OK</font></b>\nReceive job status\n(PENDING/PROCESSING/COMPLETED);
+        else (<font color=red>no</font>)
+            :<b><font color=orange>404 Not Found</font></b>;
+            stop
+        endif
+
+    repeat while (Status != COMPLETED?) is (<font color=orange>yes</font>)
+
+    :Job completed ✓;
+
+    stop
+
+split again
+    |#F0FFF0|Consumer Module|
+
+    partition "Async Processing" #C8E6C9 {
+        :Update job status\nPENDING → PROCESSING;
+
+        :Record start timestamp;
+
+        fork
+            :Initialize metrics\n- records_processed\n- records_failed\n- processing_duration;
+        fork again
+            :Start timer for\nperformance monitoring;
+        end fork
+
+        :Open CSV file as\nreactive stream;
+
+        :Parse CSV header\n(extract column names);
+
+        :Initialize counters:\n- processedRows = 0\n- failedRows = 0\n- batchBuffer = [];
+
+        repeat
+            :Read next CSV line\n(reactive stream);
+
+            :Parse line → DataRecord\n(10 columns);
+
+            partition "Transformation" #B3E5FC {
+                :Apply business rules;
+                note right
+                    • Normalize column1
+                    • Calculate column10
+                    • Format dates
+                    • Set defaults
+                end note
+
+                if (Transformation error?) then (<font color=red>yes</font>)
+                    :Log error;
+                    :Mark record as failed;
+                    :failedRows++;
+                else (<font color=green>no</font>)
+                    :Record transformed ✓;
+                endif
+            }
+
+            partition "Validation" #FFE082 {
+                :Validate record;
+                note right
+                    • Check required fields
+                    • Validate data types
+                    • Business rules
+                end note
+
+                if (Validation passed?) then (<font color=green>yes</font>)
+                    :Add to batch buffer;
+                else (<font color=red>no</font>)
+                    :Log validation error;
+                    :failedRows++;
+                endif
+            }
+
+            if (Buffer size == 1000?) then (<font color=green>yes</font>)
+                partition "Batch Persistence" #FFD5A8 {
+                    :Set importJobId for all\nrecords in batch;
+
+                    :Set importedAt timestamp;
+
+                    :Attempt MongoDB\nbatch insert (saveAll);
+
+                    if (DB write success?) then (<font color=red>no</font>)
+                        :Retry attempt 1\n(wait 2s);
+
+                        if (Retry 1 success?) then (<font color=red>no</font>)
+                            :Retry attempt 2\n(wait 4s);
+
+                            if (Retry 2 success?) then (<font color=red>no</font>)
+                                :Retry attempt 3\n(wait 8s);
+
+                                if (Retry 3 success?) then (<font color=red>no</font>)
+                                    :Log batch failure;
+                                    :Skip batch;
+                                    :failedRows += 1000;
+                                else (<font color=green>yes</font>)
+                                    :Batch saved ✓;
+                                endif
+                            else (<font color=green>yes</font>)
+                                :Batch saved ✓;
+                            endif
+                        else (<font color=green>yes</font>)
+                            :Batch saved ✓;
+                        endif
+                    else (<font color=green>yes</font>)
+                        :Batch saved ✓;
+                        :processedRows += 1000;
+                    endif
+
+                    :Update job progress\nin MongoDB;
+
+                    :Clear batch buffer;
+
+                    :Record metrics;
+                }
+            else (<font color=orange>no</font>)
+                :Continue buffering;
+            endif
+
+        repeat while (More CSV lines?) is (<font color=green>yes</font>)
+
+        :Process final batch\n(if any remaining);
+
+        :Calculate final statistics:\n- Total processed\n- Total failed\n- Success rate\n- Duration;
+
+        if (failedRows == 0?) then (<font color=green>yes</font>)
+            :Update job status\nPROCESSING → COMPLETED;
+        else (<font color=orange>no</font>)
+            :Update job status\nPROCESSING → COMPLETED_WITH_ERRORS;
+        endif
+
+        :Record completion timestamp;
+
+        :Publish metrics:\n- Processing duration\n- Throughput (rows/sec)\n- Success rate;
+
+        fork
+            :Close file stream;
+        fork again
+            :Release resources;
+        fork again
+            :Trigger cleanup\n(optional);
+        end fork
+
+        :Processing complete ✓;
+    }
+
+end split
+
+|#E8F5E9|Monitoring|
+:Collect metrics;
+
+:Check thresholds;
+
+if (Failed rows > 5%?) then (<font color=red>yes</font>)
+    :Trigger alert\n"High failure rate";
+else (<font color=green>no</font>)
+    :Metrics OK ✓;
+endif
+
+stop
+
+floating note left
+    <b>HTTP Status Codes:</b>
+
+    <b><font color=green>Success:</font></b>
+    • 202 Accepted - Job created
+    • 200 OK - Status retrieved
+
+    <b><font color=red>Client Errors:</font></b>
+    • 400 Bad Request - Invalid file
+    • 404 Not Found - Job not found
+    • 413 Payload Too Large - File too big
+    • 429 Too Many Requests - Rate limited
+
+    <b><font color=red>Server Errors:</font></b>
+    • 500 Internal Error - Server error
+    • 503 Service Unavailable - DB down
+end note
+
+floating note right
+    <b>Database Operations:</b>
+
+    <b>Insert Operations:</b>
+    • INSERT import_jobs (1 doc)
+    • INSERT data_records (batches of 1000)
+
+    <b>Update Operations:</b>
+    • UPDATE job status (PENDING → PROCESSING)
+    • UPDATE progress (every 1000 records)
+    • UPDATE completion (PROCESSING → COMPLETED)
+
+    <b>Select Operations:</b>
+    • SELECT job by ID (polling)
+    • SELECT jobs list
+    • SELECT records by jobId
+end note
+
+legend right
+    |= Activity Type |= Color |= Description |
+    | Start/End | <#000000> | Process boundaries |
+    | Validation | <#FFE6A8> | Input validation |
+    | Rate Limiting | <#FFF9C4> | Concurrency control |
+    | Job Creation | <#A8D5FF> | Job lifecycle |
+    | Processing | <#C8E6C9> | Main processing |
+    | Transformation | <#B3E5FC> | Data manipulation |
+    | Validation | <#FFE082> | Business rules |
+    | Persistence | <#FFD5A8> | Database writes |
+    | Monitoring | <#E8F5E9> | Observability |
+
+    |= Decision Colors |= Meaning |
+    | <font color=green>Green path</font> | Success flow |
+    | <font color=red>Red path</font> | Error flow |
+    | <font color=orange>Orange path</font> | Alternative flow |
+
+    |= Performance Metrics |= Value |
+    | Processing Time | 35-70 sec (500K rows) |
+    | Memory Usage | 5-20 MB (constant) |
+    | Throughput | 20-30K rows/sec |
+    | Success Rate | 99.98% |
+endlegend
+
+@enduml
+
+

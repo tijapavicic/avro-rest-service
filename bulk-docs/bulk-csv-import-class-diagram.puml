@@ -1,0 +1,357 @@
+@startuml Bulk CSV Import - Class Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+skinparam classAttributeIconSize 0
+
+title <size:16><b>Bulk CSV Import - Class Diagram</b></size>\n<size:12>Domain Model | Producer & Consumer Modules</size>
+
+package "Producer Module - API Layer" #F0F8FF {
+    class BulkImportController <<@RestController>> {
+        - importService: CsvImportService
+        - jobService: ImportJobService
+        --
+        + uploadCsv(FilePart): Mono<ResponseEntity<ImportResponse>>
+        + getJobStatus(String): Mono<ResponseEntity<ImportJob>>
+        + listJobs(String): Flux<ImportJob>
+        --
+        <b>HTTP Status Codes:</b>
+        • 202 Accepted (upload)
+        • 200 OK (status)
+        • 400 Bad Request
+        • 404 Not Found
+        • 413 Payload Too Large
+        • 429 Too Many Requests
+    }
+}
+
+package "Producer Module - Domain Model" #F0F8FF {
+    class ImportJob <<@Document>> {
+        - id: String
+        - filename: String
+        - userId: String
+        - status: ImportStatus
+        - totalRows: Long
+        - processedRows: Long
+        - failedRows: Long
+        - fileSizeBytes: Long
+        - createdAt: LocalDateTime
+        - startedAt: LocalDateTime
+        - completedAt: LocalDateTime
+        - errorMessage: String
+        --
+        + getId(): String
+        + getStatus(): ImportStatus
+        + updateProgress(Long, Long): void
+    }
+
+    enum ImportStatus {
+        PENDING
+        PROCESSING
+        COMPLETED
+        COMPLETED_WITH_ERRORS
+        FAILED
+        CANCELLED
+        --
+        + name(): String
+        + ordinal(): int
+    }
+
+    class ImportResponse <<DTO>> {
+        - jobId: String
+        - status: ImportStatus
+        - message: String
+        - statusUrl: String
+        - estimatedRows: Long
+        - timestamp: LocalDateTime
+        --
+        + getJobId(): String
+        + getStatusUrl(): String
+    }
+}
+
+package "Producer Module - Service Layer" #F0F8FF {
+    class CsvImportService <<@Service>> {
+        - importJobService: ImportJobService
+        - fileValidationService: FileValidationService
+        - orchestrator: CsvProcessingOrchestrator
+        --
+        + initiateImport(FilePart): Mono<ImportJob>
+    }
+
+    class ImportJobService <<@Service>> {
+        - repository: ImportJobRepository
+        --
+        + createJob(ImportJob): Mono<ImportJob>
+        + getJob(String): Mono<ImportJob>
+        + startProcessing(String): Mono<ImportJob>
+        + updateProgress(String, Long, Long): Mono<ImportJob>
+        + completeJob(String, Long, Long): Mono<ImportJob>
+        + failJob(String, String): Mono<ImportJob>
+        + listJobs(String): Flux<ImportJob>
+    }
+
+    class FileValidationService <<@Service>> {
+        - maxFileSizeBytes: long
+        --
+        + validate(FilePart): Mono<FilePart>
+        - validateFileSize(FilePart): Mono<FilePart>
+        - validateContentType(FilePart): Mono<FilePart>
+        - validateFilename(FilePart): Mono<FilePart>
+    }
+
+    class CsvProcessingOrchestrator <<@Service>> {
+        - importJobService: ImportJobService
+        - csvStreamProcessor: CsvStreamProcessor
+        - persistenceService: DataPersistenceService
+        - meterRegistry: MeterRegistry
+        --
+        + processAsync(String, FilePart): Mono<Void>
+    }
+}
+
+package "Producer Module - Repository Layer" #F0F8FF {
+    interface ImportJobRepository <<interface>> {
+        + save(ImportJob): Mono<ImportJob>
+        + findById(String): Mono<ImportJob>
+        + findByUserId(String): Flux<ImportJob>
+        + findByStatus(ImportStatus): Flux<ImportJob>
+    }
+
+    interface ReactiveMongoRepository {
+        {abstract} + save(T): Mono<T>
+        {abstract} + findById(ID): Mono<T>
+        {abstract} + findAll(): Flux<T>
+    }
+}
+
+package "Consumer Module - Domain Model" #F0FFF0 {
+    class DataRecord <<@Document>> {
+        - id: String
+        - importJobId: String
+        - lineNumber: Long
+        - column1: String
+        - column2: String
+        - column3: String
+        - column4: String
+        - column5: String
+        - column6: String
+        - column7: String
+        - column8: String
+        - column9: String
+        - column10: String
+        - importedAt: LocalDateTime
+        - processingStatus: String
+        - notes: String
+        --
+        + getId(): String
+        + getImportJobId(): String
+        + setColumn1(String): void
+        .. 10 CSV columns ..
+    }
+}
+
+package "Consumer Module - Processing Layer" #F0FFF0 {
+    class CsvStreamProcessor <<@Component>> {
+        - transformationService: DataTransformationService
+        --
+        + parseAndTransform(FilePart): Flux<DataRecord>
+        - parseRecord(CSVRecord): DataRecord
+        - isValid(DataRecord): boolean
+    }
+
+    class DataTransformationService <<@Service>> {
+        + transform(DataRecord): Mono<DataRecord>
+        + enrichWithExternalData(DataRecord): Mono<DataRecord>
+        - standardizeFormat(String): String
+    }
+
+    class DataPersistenceService <<@Service>> {
+        - repository: DataRecordRepository
+        - retry: Retry
+        --
+        + persistBatch(String, List<DataRecord>): Mono<List<DataRecord>>
+        + persistBatchBulk(String, List<DataRecord>): Mono<List<DataRecord>>
+        + getRecordsByJobId(String): Flux<DataRecord>
+        + countRecordsByJobId(String): Mono<Long>
+    }
+}
+
+package "Consumer Module - Repository Layer" #F0FFF0 {
+    interface DataRecordRepository <<interface>> {
+        + save(DataRecord): Mono<DataRecord>
+        + saveAll(List<DataRecord>): Flux<DataRecord>
+        + findByImportJobId(String): Flux<DataRecord>
+        + countByImportJobId(String): Mono<Long>
+    }
+}
+
+package "Spring Framework" #FFFFCC {
+    class SpringBootApplication <<framework>>
+    class WebFlux <<framework>>
+    class ReactorCore <<framework>>
+    class MongoReactive <<framework>>
+}
+
+package "External Libraries" #FFFFCC {
+    class ApacheCommonsCSV <<library>> {
+        + CSVParser
+        + CSVFormat
+        + CSVRecord
+    }
+
+    class Resilience4j <<library>> {
+        + Retry
+        + CircuitBreaker
+        + RateLimiter
+    }
+
+    class Micrometer <<library>> {
+        + MeterRegistry
+        + Counter
+        + Timer
+    }
+
+    class Lombok <<library>> {
+        + @Data
+        + @Builder
+        + @Slf4j
+    }
+}
+
+' Relationships - Controller
+BulkImportController --> CsvImportService : uses
+BulkImportController --> ImportJobService : uses
+BulkImportController ..> ImportResponse : returns
+BulkImportController ..> ImportJob : returns
+
+' Relationships - Services
+CsvImportService --> ImportJobService : uses
+CsvImportService --> FileValidationService : uses
+CsvImportService --> CsvProcessingOrchestrator : uses
+
+ImportJobService --> ImportJobRepository : uses
+ImportJobService ..> ImportJob : manages
+
+CsvProcessingOrchestrator --> ImportJobService : updates status
+CsvProcessingOrchestrator --> CsvStreamProcessor : consumes from
+CsvProcessingOrchestrator --> DataPersistenceService : persists via
+CsvProcessingOrchestrator --> Micrometer : records metrics
+
+' Relationships - Consumer
+CsvStreamProcessor --> DataTransformationService : uses
+CsvStreamProcessor --> ApacheCommonsCSV : uses
+CsvStreamProcessor ..> DataRecord : produces
+
+DataTransformationService ..> DataRecord : transforms
+
+DataPersistenceService --> DataRecordRepository : uses
+DataPersistenceService --> Resilience4j : uses
+DataPersistenceService ..> DataRecord : persists
+
+' Relationships - Repository
+ImportJobRepository --|> ReactiveMongoRepository : extends
+ImportJobRepository ..> ImportJob : manages
+
+DataRecordRepository --|> ReactiveMongoRepository : extends
+DataRecordRepository ..> DataRecord : manages
+
+' Relationships - Domain Model
+ImportJob --> ImportStatus : has
+ImportResponse --> ImportStatus : has
+
+DataRecord --> ImportJob : references by jobId
+
+' Relationships - Framework
+ImportJobRepository --> MongoDriver : uses
+DataRecordRepository --> MongoDriver : uses
+MongoDriver --> MongoDB : connects to
+
+' Client relationships
+WebClient --> BulkImportController : HTTP requests
+RESTClient --> BulkImportController : HTTP requests
+ExtSystem --> BulkImportController : HTTP requests
+
+' Health check
+BulkImportController --> Actuator : health endpoint
+MongoDB --> Actuator : health checks
+
+note right of BulkImportController
+    <b>Endpoints & Status Codes:</b>
+
+    POST /api/v1/import/csv
+    • <font color=green>202 Accepted</font> - Job created
+    • <font color=red>400</font> Bad Request - Invalid file
+    • <font color=red>413</font> Payload Too Large
+    • <font color=red>429</font> Too Many Requests
+    • <font color=red>503</font> Service Unavailable
+
+    GET /api/v1/import/jobs/{id}
+    • <font color=green>200 OK</font> - Job found
+    • <font color=orange>404 Not Found</font> - Job not found
+
+    GET /api/v1/import/jobs
+    • <font color=green>200 OK</font> - List returned
+end note
+
+note right of ImportStatus
+    <b>Status Lifecycle:</b>
+    PENDING
+      ↓
+    PROCESSING
+      ↓
+    COMPLETED /
+    COMPLETED_WITH_ERRORS /
+    FAILED
+end note
+
+note bottom of DataRecord
+    <b>10 CSV Columns:</b>
+    column1 through column10
+
+    <b>Metadata:</b>
+    • importJobId (reference)
+    • lineNumber (CSV line)
+    • importedAt (timestamp)
+    • processingStatus (state)
+end note
+
+note left of CsvStreamProcessor
+    <b>Reactive Processing:</b>
+    • Line-by-line parsing
+    • Backpressure control
+    • Buffer: 10K records
+    • Batch: 1000 records
+
+    <b>Memory:</b>
+    Constant 5-20MB
+end note
+
+note left of DataPersistenceService
+    <b>Batch Persistence:</b>
+    • Batch size: 1000
+    • Concurrency: 3 batches
+    • Retry: 3 attempts
+    • Timeout: 30 seconds
+end note
+
+legend right
+    |= Stereotype |= Meaning |
+    | <<@RestController>> | REST API endpoint |
+    | <<@Service>> | Business logic |
+    | <<@Component>> | Spring-managed bean |
+    | <<@Document>> | MongoDB entity |
+    | <<interface>> | Repository interface |
+    | <<framework>> | Spring framework |
+    | <<library>> | External library |
+
+    |= Color |= Layer |
+    | <#F0F8FF> | Producer Module |
+    | <#F0FFF0> | Consumer Module |
+    | <#FFF0F5> | Data Layer |
+    | <#FFFFCC> | Libraries/Framework |
+    | <#F5F5F5> | Cross-cutting |
+endlegend
+
+@enduml
+

@@ -1,0 +1,12 @@
+column1,column2,column3,column4,column5,column6,column7,column8,column9,column10
+PROD-000001,Widget A,Electronics,100,25.50,USD,2026-03-22,Active,High,Priority-1
+PROD-000002,Widget B,Home Goods,200,30.00,USD,2026-03-23,Active,Medium,Priority-2
+PROD-000003,Widget C,Electronics,150,15.75,USD,2026-03-24,Inactive,Low,Priority-3
+PROD-000004,Widget D,Sports,300,45.99,USD,2026-03-25,Active,High,Priority-4
+PROD-000005,Widget E,Books,50,12.25,USD,2026-03-26,Active,Medium,Priority-5
+PROD-000006,Widget F,Electronics,175,22.50,USD,2026-03-27,Inactive,Low,Priority-1
+PROD-000007,Widget G,Home Goods,225,35.00,USD,2026-03-28,Active,High,Priority-2
+PROD-000008,Widget H,Sports,125,18.99,USD,2026-03-29,Active,Medium,Priority-3
+PROD-000009,Widget I,Books,75,9.95,USD,2026-03-30,Inactive,Low,Priority-4
+PROD-000010,Widget J,Electronics,400,55.00,USD,2026-03-31,Active,High,Priority-5
+

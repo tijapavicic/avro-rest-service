@@ -1,0 +1,252 @@
+@startuml Bulk CSV Import - Deployment Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+
+title <size:16><b>Bulk CSV Import - Deployment Architecture</b></size>\n<size:12>Production Infrastructure | Cloud-Ready | Scalable</size>
+
+node "Client Tier" #F0F8FF {
+    artifact "Web Browser" as Browser
+    artifact "CLI Client\n(curl/httpie)" as CLI
+    artifact "External System\n(API Integration)" as ExtSys
+}
+
+node "Load Balancer" #E3F2FD {
+    component "NGINX / ALB\nPort 443 (HTTPS)" as LB
+    note right
+        • SSL Termination
+        • Rate Limiting
+        • Request routing
+    end note
+}
+
+node "Application Server 1\n(Kubernetes Pod / EC2)" #F0F8FF {
+    component "Bulk Import Service\nPort 8080" as App1 {
+        artifact "bulk-import-producer.jar" as ProducerJar1
+        artifact "bulk-import-consumer.jar" as ConsumerJar1
+    }
+
+    component "JVM\n(OpenJDK 17)" as JVM1 {
+        note right
+            Heap: 1GB
+            Metaspace: 256MB
+        end note
+    }
+
+    component "Spring Boot\nWebFlux Runtime" as Spring1
+}
+
+node "Application Server 2\n(Kubernetes Pod / EC2)" #F0F8FF {
+    component "Bulk Import Service\nPort 8080" as App2 {
+        artifact "bulk-import-producer.jar" as ProducerJar2
+        artifact "bulk-import-consumer.jar" as ConsumerJar2
+    }
+
+    component "JVM\n(OpenJDK 17)" as JVM2
+    component "Spring Boot\nWebFlux Runtime" as Spring2
+}
+
+node "Application Server N\n(Horizontal Scaling)" #F0F8FF {
+    component "Bulk Import Service\nPort 8080" as AppN {
+        artifact "..." as ProducerJarN
+    }
+    note bottom
+        Scale out based on:
+        • CPU usage > 70%
+        • Concurrent jobs > 10
+        • Request rate
+    end note
+}
+
+cloud "Message Queue\n(Optional Future)" #FFF9C4 {
+    database "Apache Kafka\n/ RabbitMQ\n/ AWS SQS" as MQ
+    note right
+        Optional:
+        Decouple producer
+        from consumer
+    end note
+}
+
+node "Database Cluster" #FFF0F5 {
+    database "MongoDB Primary\nPort 27017" as MongoPrimary {
+        storage "import_jobs\ncollection" as JobsCol
+        storage "data_records\ncollection" as RecordsCol
+    }
+
+    database "MongoDB Secondary 1\nPort 27017" as MongoSec1 {
+        storage "import_jobs\n(replica)" as JobsRep1
+        storage "data_records\n(replica)" as RecordsRep1
+    }
+
+    database "MongoDB Secondary 2\nPort 27017" as MongoSec2 {
+        storage "import_jobs\n(replica)" as JobsRep2
+        storage "data_records\n(replica)" as RecordsRep2
+    }
+
+    note bottom of MongoPrimary
+        <b>Replica Set:</b>
+        • 1 Primary + 2 Secondary
+        • Automatic failover
+        • Read preference: primaryPreferred
+
+        <b>Indexes:</b>
+        • import_jobs: status, userId, createdAt
+        • data_records: importJobId
+    end note
+}
+
+node "Monitoring Stack" #E8F5E9 {
+    component "Prometheus\nPort 9090" as Prometheus
+    component "Grafana\nPort 3000" as Grafana
+    component "AlertManager" as AlertMgr
+
+    note right
+        <b>Metrics Collected:</b>
+        • csv.records.processed
+        • csv.records.failed
+        • csv.processing.duration
+        • http.server.requests
+
+        <b>Alerts:</b>
+        • Failed jobs > 5%
+        • Processing time > 5min
+        • Memory > 500MB
+    end note
+}
+
+node "Log Aggregation" #E3F2FD {
+    component "ELK Stack /\nCloudWatch Logs" as Logs
+    note right
+        • Application logs
+        • Error tracking
+        • Audit trail
+    end note
+}
+
+node "File Storage\n(Optional)" #FFF9C4 {
+    storage "AWS S3 /\nAzure Blob" as FileStore
+    note right
+        Optional:
+        Store uploaded CSV
+        for audit/replay
+    end note
+}
+
+' Client connections
+Browser -down-> LB : HTTPS (443)
+CLI -down-> LB : HTTPS (443)
+ExtSys -down-> LB : HTTPS (443)
+
+' Load balancer to app servers
+LB -down-> App1 : HTTP (8080)
+LB -down-> App2 : HTTP (8080)
+LB -down-> AppN : HTTP (8080)
+
+' App internal
+ProducerJar1 -down-> JVM1
+ConsumerJar1 -down-> JVM1
+JVM1 -down-> Spring1
+
+ProducerJar2 -down-> JVM2
+ConsumerJar2 -down-> JVM2
+JVM2 -down-> Spring2
+
+' App to database
+App1 -down-> MongoPrimary : TCP (27017)\nReactive Streams
+App2 -down-> MongoPrimary : TCP (27017)\nReactive Streams
+AppN -down-> MongoPrimary : TCP (27017)
+
+' MongoDB replication
+MongoPrimary -right-> MongoSec1 : Replication\nOplog
+MongoPrimary -right-> MongoSec2 : Replication\nOplog
+MongoSec1 <-right-> MongoSec2 : Heartbeat
+
+' Optional message queue
+App1 -down-> MQ : Publish jobs\n(optional)
+App2 -down-> MQ : Consume jobs\n(optional)
+
+' Monitoring
+App1 -down-> Prometheus : /actuator/prometheus
+App2 -down-> Prometheus : /actuator/prometheus
+AppN -down-> Prometheus : /actuator/prometheus
+
+Prometheus -right-> Grafana : Data source
+Prometheus -down-> AlertMgr : Alerts
+
+' Logging
+App1 -down-> Logs : Application logs
+App2 -down-> Logs : Application logs
+MongoPrimary -down-> Logs : Database logs
+
+' Optional file storage
+App1 -down-> FileStore : Store CSV\n(optional)
+App2 -down-> FileStore : Store CSV\n(optional)
+
+note right of LB
+    <b>Load Balancer Config:</b>
+    • Algorithm: Round-robin
+    • Health check: /actuator/health
+    • Timeout: 60s
+    • Max request: 500MB
+
+    <b>SSL/TLS:</b>
+    • Certificate: Let's Encrypt
+    • Protocol: TLS 1.3
+    • HSTS enabled
+end note
+
+note right of App1
+    <b>Application Config:</b>
+    • JVM: OpenJDK 17
+    • Memory: 1GB heap
+    • Threads: 100 (WebFlux)
+    • Reactive: Non-blocking I/O
+
+    <b>Environment Variables:</b>
+    • MONGO_URI
+    • MAX_FILE_SIZE
+    • BATCH_SIZE
+
+    <b>Health Endpoint:</b>
+    GET /actuator/health
+    → <font color=green>200 OK</font>
+end note
+
+note bottom of MongoPrimary
+    <b>Database Specifications:</b>
+    • Version: MongoDB 7.0
+    • Storage: WiredTiger
+    • RAM: 8GB
+    • Disk: 500GB SSD
+
+    <b>Connections:</b>
+    • Max pool: 50 per app
+    • Timeout: 30s
+    • Write concern: majority
+end note
+
+legend right
+    |= Deployment Unit |= Technology |= Scaling |
+    | Application Server | Spring Boot 3.2 | Horizontal |
+    | Database | MongoDB 7.0 | Replica Set |
+    | Load Balancer | NGINX/ALB | Active-Active |
+    | Monitoring | Prometheus + Grafana | Centralized |
+    | Logging | ELK/CloudWatch | Centralized |
+
+    |= Color |= Component Type |
+    | <#F0F8FF> | Application tier |
+    | <#FFF0F5> | Data tier |
+    | <#E8F5E9> | Monitoring tier |
+    | <#E3F2FD> | Infrastructure |
+    | <#FFF9C4> | Optional components |
+    | <#FFFFCC> | Libraries |
+
+    |= HTTP Status Codes |= Usage |
+    | <font color=green>202 Accepted</font> | Job created |
+    | <font color=green>200 OK</font> | Status retrieved |
+    | <font color=red>400-429</font> | Client errors |
+    | <font color=red>500-503</font> | Server errors |
+endlegend
+
+@enduml
+

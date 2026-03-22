@@ -1,0 +1,203 @@
+@startuml Bulk CSV Import - Simplified Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+skinparam BoxPadding 10
+
+title <size:16><b>Bulk CSV Import - Complete Sequence Flow with HTTP Status Codes</b></size>\n<size:12>500K Rows CSV | Async Processing | Reactive Streams</size>
+
+actor Client #lightblue
+box "Producer Module" #F0F8FF
+    participant "Import\nController" as Ctrl
+    participant "File\nValidator" as Valid
+    participant "Import Job\nService" as JobSvc
+    participant "Processing\nOrchestrator" as Orch
+end box
+
+box "Consumer Module" #F0FFF0
+    participant "CSV Stream\nProcessor" as CSV
+    participant "Data Transform\nService" as Trans
+    participant "Data Persistence\nService" as Persist
+end box
+
+database "MongoDB" as DB #FFF0F5
+
+=== 1. Upload CSV File ===
+
+Client -> Ctrl: <b>POST /api/v1/import/csv</b>\n<i>multipart/form-data</i>\nFile: data.csv (50MB)
+activate Ctrl #FFE6E6
+
+Ctrl -> Valid: validate(file)
+activate Valid #FFE6A8
+
+alt <b>Validation Fails</b>
+    Valid --> Ctrl: ValidationException
+    Ctrl --> Client: <b><font color=red>400 Bad Request</font></b>\nor <b><font color=red>413 Payload Too Large</font></b>
+    note right
+        <b>Possible Errors:</b>
+        • 400 - Invalid format
+        • 413 - File > 500MB
+        • 400 - Bad filename
+    end note
+else <b>Validation Success</b>
+    Valid --> Ctrl: ✓ File valid
+    deactivate Valid
+
+    Ctrl -> JobSvc: createJob(filename, size)
+    activate JobSvc #A8D5FF
+
+    JobSvc -> DB: INSERT import_jobs\nstatus='PENDING'
+    activate DB #E1BEE7
+    DB --> JobSvc: jobId="65f1a2b3..."
+    deactivate DB
+
+    JobSvc --> Ctrl: ImportJob created
+    deactivate JobSvc
+
+    Ctrl -> Orch: processAsync(jobId, file)\n<i><b>Fire & Forget</b></i>
+    note right: Async processing\nstarts in background
+
+    Ctrl --> Client: <b><font color=green>202 Accepted</font></b>\n{\n  "jobId": "65f1a2b3...",\n  "status": "PENDING",\n  "statusUrl": "/api/v1/import/jobs/..."\n}
+    deactivate Ctrl
+end
+
+=== 2. Async Processing (Background Thread) ===
+
+activate Orch #FFD5A8
+Orch -> JobSvc: startProcessing(jobId)
+activate JobSvc
+JobSvc -> DB: UPDATE status='PROCESSING'\nstartedAt=now()
+activate DB
+DB --> JobSvc: ✓
+deactivate DB
+deactivate JobSvc
+
+Orch -> CSV: parseAndTransform(filePart)
+activate CSV #C8E6C9
+
+loop <b>Stream 500K lines</b>
+    CSV -> CSV: Parse line → DataRecord
+
+    CSV -> Trans: transform(record)
+    activate Trans #B3E5FC
+    Trans -> Trans: • Normalize text\n• Calculate values\n• Apply business rules
+    Trans --> CSV: Transformed record
+    deactivate Trans
+
+    CSV -> CSV: validate(record)
+
+    alt <b>Batch Ready (1000 records)</b>
+        CSV -> Persist: persistBatch(jobId, batch[1000])
+        activate Persist #FFE082
+
+        Persist -> DB: <b>saveAll(batch)</b>\nBatch insert 1000 records
+        activate DB
+
+        alt <b>DB Transient Error</b>
+            DB --> Persist: <font color=orange>TransientException</font>
+            Persist -> Persist: Retry (1/3)
+            Persist -> DB: saveAll(batch) - retry
+            DB --> Persist: ✓ Success
+        else <b>DB Timeout</b>
+            DB --> Persist: <font color=red>Timeout (30s)</font>
+            Persist -> Persist: Log & skip batch
+            note right: Batch marked failed\nContinue processing
+        else <b>Success</b>
+            DB --> Persist: ✓ Saved 1000 records
+        end
+        deactivate DB
+
+        Persist --> CSV: Batch saved
+        deactivate Persist
+
+        CSV -> JobSvc: updateProgress(processed, failed)
+        activate JobSvc
+        JobSvc -> DB: UPDATE processedRows,\nfailedRows
+        activate DB
+        DB --> JobSvc: ✓
+        deactivate DB
+        deactivate JobSvc
+    end
+end
+
+CSV --> Orch: All lines processed
+deactivate CSV
+
+Orch -> JobSvc: completeJob(jobId, 499900, 100)
+activate JobSvc
+JobSvc -> DB: UPDATE status='COMPLETED_WITH_ERRORS'\nprocessedRows=499900\nfailedRows=100\ncompletedAt=now()
+activate DB
+DB --> JobSvc: ✓
+deactivate DB
+JobSvc --> Orch: Job completed
+deactivate JobSvc
+
+note over Orch
+    <b>Processing Complete!</b>
+    • Time: 45 seconds
+    • Memory: 15 MB
+    • Throughput: 11,100 rows/sec
+end note
+deactivate Orch
+
+=== 3. Status Polling ===
+
+Client -> Ctrl: <b>GET /api/v1/import/jobs/{jobId}</b>
+activate Ctrl
+
+Ctrl -> JobSvc: getJob(jobId)
+activate JobSvc
+JobSvc -> DB: SELECT * FROM import_jobs\nWHERE id=?
+activate DB
+
+alt <b>Job Not Found</b>
+    DB --> JobSvc: null
+    deactivate DB
+    JobSvc --> Ctrl: empty()
+    deactivate JobSvc
+    Ctrl --> Client: <b><font color=orange>404 Not Found</font></b>
+    deactivate Ctrl
+else <b>Job Found</b>
+    DB --> JobSvc: ImportJob
+    deactivate DB
+    JobSvc --> Ctrl: ImportJob
+    deactivate JobSvc
+    Ctrl --> Client: <b><font color=green>200 OK</font></b>\n{\n  "status": "COMPLETED_WITH_ERRORS",\n  "processedRows": 499900,\n  "failedRows": 100,\n  "totalRows": 500000,\n  "successRate": "99.98%"\n}
+    deactivate Ctrl
+end
+
+=== 4. Error Scenarios ===
+
+group <b>Rate Limit Exceeded</b>
+    Client -> Ctrl: POST /api/v1/import/csv\n<i>(11th concurrent job)</i>
+    activate Ctrl
+    Ctrl -> Ctrl: checkRateLimit()\n<font color=red>✗ Exceeded</font>
+    Ctrl --> Client: <b><font color=red>429 Too Many Requests</font></b>\nRetry-After: 60\nX-RateLimit-Limit: 10\nX-RateLimit-Remaining: 0
+    deactivate Ctrl
+end
+
+group <b>Service Unavailable</b>
+    Client -> Ctrl: POST /api/v1/import/csv
+    activate Ctrl
+    Ctrl -> DB: ping()
+    activate DB
+    DB --> Ctrl: <font color=red>Connection failed</font>
+    deactivate DB
+    Ctrl --> Client: <b><font color=red>503 Service Unavailable</font></b>\nRetry-After: 120\n{\n  "error": "Database unavailable"\n}
+    deactivate Ctrl
+end
+
+legend right
+    |= Code |= Meaning |= When Used |
+    | <b><font color=green>202</font></b> | Accepted | Import job created |
+    | <b><font color=green>200</font></b> | OK | Job status retrieved |
+    | <b><font color=red>400</font></b> | Bad Request | Invalid file |
+    | <b><font color=orange>404</font></b> | Not Found | Job not found |
+    | <b><font color=red>413</font></b> | Payload Too Large | File > 500MB |
+    | <b><font color=red>429</font></b> | Too Many Requests | Rate limit hit |
+    | <b><font color=red>500</font></b> | Internal Error | Unexpected error |
+    | <b><font color=red>503</font></b> | Service Unavailable | DB down |
+endlegend
+
+@enduml
+

@@ -23,6 +23,8 @@
         <module>large-payload-webflux</module>
         <module>calculation-engine</module>
         <module>simulation-engine</module>
+        <module>bulk-import-producer</module>
+        <module>bulk-import-consumer</module>
     </modules>
 
     <properties>

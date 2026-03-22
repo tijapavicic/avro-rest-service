@@ -1,0 +1,74 @@
+# Bulk Import Producer Configuration
+
+# Server Configuration
+server:
+  port: 8080
+  compression:
+    enabled: true
+    mime-types: application/json,text/csv
+
+# Spring Application
+spring:
+  application:
+    name: bulk-import-service
+  
+  # MongoDB Configuration
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/bulk_import
+      auto-index-creation: true
+  
+  # Servlet Configuration
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB
+      max-request-size: 500MB
+      file-size-threshold: 10MB
+  
+  # WebFlux Configuration
+  codec:
+    max-in-memory-size: 10MB
+
+# Bulk Import Settings
+bulk-import:
+  max-file-size: 524288000  # 500MB in bytes
+  batch-size: 1000
+  max-concurrent-jobs: 10
+  processing-timeout-hours: 2
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.example.avro: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    reactor.netty: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management & Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics,prometheus,info
+      base-path: /actuator
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: ${spring.application.name}
+  endpoint:
+    health:
+      show-details: always
+
+# Security (customize as needed)
+# spring:
+#   security:
+#     user:
+#       name: admin
+#       password: changeme
+

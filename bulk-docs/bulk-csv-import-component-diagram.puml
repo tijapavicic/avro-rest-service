@@ -1,0 +1,153 @@
+@startuml Bulk CSV Import - Component Diagram
+scale 0.5
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 11
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+title <size:16><b>Bulk CSV Import - Component Architecture</b></size>\n<size:12>Producer-Consumer Pattern | Reactive Streams | MongoDB</size>
+
+package "Client Layer" #F0F8FF {
+    component [Web Client\n(Browser/CLI)] as WebClient
+    component [REST Client\n(Postman/curl)] as RESTClient
+    component [External System] as ExtSystem
+
+    interface "HTTP API" as ClientAPI
+}
+
+package "Producer Module" #F0F8FF {
+    component [Import Controller\n<<REST Controller>>] as ImportCtrl
+
+    component [File Validation\nService\n<<Service>>] as FileValidator
+
+    component [Import Job\nService\n<<Service>>] as JobService
+
+    component [CSV Processing\nOrchestrator\n<<Service>>] as Orchestrator
+}
+
+package "Consumer Module" #F0FFF0 {
+    component [CSV Stream\nProcessor\n<<Processor>>] as CSVProcessor
+
+    component [Data Transformation\nService\n<<Service>>] as Transformer
+
+    component [Data Persistence\nService\n<<Service>>] as Persistence
+
+    component [Apache Commons CSV\n<<Library>>] as CommonsCSV #FFFFCC
+}
+
+package "Data Layer" #FFF0F5 {
+    database "MongoDB" as MongoDB {
+        frame " import_jobs" as JobsDB
+        frame " data_records" as RecordsDB
+    }
+
+    component [Reactive MongoDB\nDriver] as MongoDriver <<Driver>> #FFFFCC
+}
+
+package "Cross-Cutting Concerns" #F5F5F5 {
+    component [Micrometer\nMetrics] as Metrics <<Monitoring>> #E8F5E9
+    component [Spring Boot\nActuator] as Actuator <<Health>> #E8F5E9
+    component [Resilience4j] as Resilience <<Circuit Breaker>> #FFF9C4
+    component [SLF4J Logger] as Logger <<Logging>> #E3F2FD
+}
+
+' Client connections
+WebClient -down-> ClientAPI
+RESTClient -down-> ClientAPI
+ExtSystem -down-> ClientAPI
+
+ClientAPI -down-> ImportCtrl
+
+' Producer internal connections
+ImportCtrl -down-> FileValidator : validate file
+ImportCtrl -down-> JobService : create/retrieve job
+ImportCtrl -down-> Orchestrator : trigger processing
+
+FileValidator -right-> Logger : log validation
+JobService -down-> MongoDriver : CRUD operations
+
+' Producer to Consumer
+Orchestrator -down-> CSVProcessor : fire & forget
+
+' Consumer internal connections
+CSVProcessor -down-> CommonsCSV : parse CSV
+CSVProcessor -right-> Transformer : transform records
+Transformer -down-> Persistence : validated records
+Persistence -down-> MongoDriver : batch writes
+
+' Data layer connections
+MongoDriver -down-> JobsDB : job tracking
+MongoDriver -down-> RecordsDB : data storage
+
+' Cross-cutting connections
+ImportCtrl -right-> Metrics : record timing
+JobService -right-> Metrics : job metrics
+CSVProcessor -right-> Metrics : parsing metrics
+Persistence -right-> Metrics : persistence metrics
+
+ImportCtrl -right-> Logger
+JobService -right-> Logger
+Orchestrator -right-> Logger
+CSVProcessor -right-> Logger
+Transformer -right-> Logger
+Persistence -right-> Logger
+
+Persistence -up-> Resilience : retry logic
+MongoDriver -up-> Resilience : circuit breaker
+
+MongoDB -up-> Actuator : health checks
+
+note right of ImportCtrl
+    <b>REST Endpoints:</b>
+    • POST /api/v1/import/csv
+      → <font color=green>202 Accepted</font>
+    • GET /api/v1/import/jobs/{id}
+      → <font color=green>200 OK</font>
+    • GET /api/v1/import/jobs
+      → <font color=green>200 OK</font>
+
+    <b>Error Responses:</b>
+    • <font color=red>400</font> Bad Request
+    • <font color=orange>404</font> Not Found
+    • <font color=red>413</font> Payload Too Large
+    • <font color=red>429</font> Too Many Requests
+    • <font color=red>503</font> Service Unavailable
+end note
+
+note right of CSVProcessor
+    <b>Processing Pipeline:</b>
+    1. Parse CSV line-by-line
+    2. Transform (business rules)
+    3. Validate records
+    4. Batch 1000 records
+    5. Persist to MongoDB
+
+    <b>Performance:</b>
+    • 20-30K rows/sec
+    • 5-20MB memory
+    • Backpressure control
+end note
+
+note bottom of MongoDB
+    <b>Collections:</b>
+    • <b>import_jobs</b>
+      - Job tracking & status
+      - Progress monitoring
+    • <b>data_records</b>
+      - Imported CSV data
+      - 10 columns + metadata
+end note
+
+legend right
+    |= Component Type |= Color |= Purpose |
+    | Producer Module | <#F0F8FF> | Accept uploads, manage jobs |
+    | Consumer Module | <#F0FFF0> | Process CSV, persist data |
+    | Data Layer | <#FFF0F5> | MongoDB storage |
+    | Libraries | <#FFFFCC> | External dependencies |
+    | Monitoring | <#E8F5E9> | Observability |
+    | Resilience | <#FFF9C4> | Error handling |
+endlegend
+
+@enduml
+

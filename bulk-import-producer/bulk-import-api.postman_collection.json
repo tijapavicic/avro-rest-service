@@ -1,0 +1,218 @@
+{
+  "info": {
+    "name": "Bulk CSV Import API",
+    "description": "API collection for testing bulk CSV import endpoints with HTTP status codes",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "bulk-import-api-collection",
+    "version": "1.0.0"
+  },
+  "item": [
+    {
+      "name": "Upload CSV File",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "test-data-small.csv",
+              "description": "CSV file to upload (max 500MB)"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/api/v1/import/csv",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "import", "csv"]
+        },
+        "description": "Upload a CSV file for async processing. Returns 202 Accepted with job ID.\n\n**Expected Response:**\n- 202 Accepted: Job created successfully\n- 400 Bad Request: Invalid file format\n- 413 Payload Too Large: File exceeds 500MB\n- 429 Too Many Requests: Rate limit exceeded\n- 503 Service Unavailable: Database unavailable"
+      },
+      "response": [
+        {
+          "name": "202 Accepted - Success",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/v1/import/csv"
+            }
+          },
+          "status": "Accepted",
+          "code": 202,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json"
+            }
+          ],
+          "body": "{\n  \"jobId\": \"65f1a2b3c4d5e6f7890abcde\",\n  \"status\": \"PENDING\",\n  \"message\": \"Import job created successfully\",\n  \"statusUrl\": \"/api/v1/import/jobs/65f1a2b3c4d5e6f7890abcde\",\n  \"timestamp\": \"2026-03-22T10:30:00\"\n}"
+        },
+        {
+          "name": "413 Payload Too Large",
+          "originalRequest": {
+            "method": "POST",
+            "url": {
+              "raw": "{{base_url}}/api/v1/import/csv"
+            }
+          },
+          "status": "Payload Too Large",
+          "code": 413,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"error\": \"File size exceeds maximum allowed\",\n  \"maxSize\": \"500MB\",\n  \"receivedSize\": \"750MB\"\n}"
+        },
+        {
+          "name": "400 Bad Request - Invalid Format",
+          "status": "Bad Request",
+          "code": 400,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"error\": \"Invalid content type\",\n  \"expected\": \"text/csv\",\n  \"received\": \"application/pdf\"\n}"
+        },
+        {
+          "name": "429 Too Many Requests",
+          "status": "Too Many Requests",
+          "code": 429,
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Retry-After",
+              "value": "60"
+            }
+          ],
+          "body": "{\n  \"error\": \"Too many concurrent imports\",\n  \"retryAfter\": 60\n}"
+        }
+      ]
+    },
+    {
+      "name": "Get Job Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/import/jobs/{{job_id}}",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "import", "jobs", "{{job_id}}"]
+        },
+        "description": "Retrieve the status of an import job.\n\n**Expected Response:**\n- 200 OK: Job found\n- 404 Not Found: Job ID doesn't exist"
+      },
+      "response": [
+        {
+          "name": "200 OK - Processing",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"id\": \"65f1a2b3c4d5e6f7890abcde\",\n  \"filename\": \"data.csv\",\n  \"status\": \"PROCESSING\",\n  \"totalRows\": 500000,\n  \"processedRows\": 250000,\n  \"failedRows\": 50,\n  \"createdAt\": \"2026-03-22T10:30:00\",\n  \"startedAt\": \"2026-03-22T10:30:05\"\n}"
+        },
+        {
+          "name": "200 OK - Completed",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"id\": \"65f1a2b3c4d5e6f7890abcde\",\n  \"filename\": \"data.csv\",\n  \"status\": \"COMPLETED_WITH_ERRORS\",\n  \"totalRows\": 500000,\n  \"processedRows\": 499900,\n  \"failedRows\": 100,\n  \"createdAt\": \"2026-03-22T10:30:00\",\n  \"completedAt\": \"2026-03-22T10:31:45\"\n}"
+        },
+        {
+          "name": "404 Not Found",
+          "status": "Not Found",
+          "code": 404,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"error\": \"Job not found\",\n  \"jobId\": \"invalid-id\"\n}"
+        }
+      ]
+    },
+    {
+      "name": "List All Jobs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/v1/import/jobs",
+          "host": ["{{base_url}}"],
+          "path": ["api", "v1", "import", "jobs"],
+          "query": [
+            {
+              "key": "userId",
+              "value": "",
+              "description": "Filter by user ID (optional)",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "List all import jobs. Optionally filter by userId."
+      },
+      "response": [
+        {
+          "name": "200 OK - Job List",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "[\n  {\n    \"id\": \"65f1a2b3c4d5e6f7890abcde\",\n    \"filename\": \"data.csv\",\n    \"status\": \"COMPLETED\",\n    \"processedRows\": 500000,\n    \"failedRows\": 0\n  }\n]"
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/actuator/health",
+          "host": ["{{base_url}}"],
+          "path": ["actuator", "health"]
+        },
+        "description": "Check application health status"
+      },
+      "response": [
+        {
+          "name": "200 OK - Healthy",
+          "status": "OK",
+          "code": 200,
+          "_postman_previewlanguage": "json",
+          "body": "{\n  \"status\": \"UP\",\n  \"components\": {\n    \"mongo\": {\n      \"status\": \"UP\"\n    }\n  }\n}"
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp",
+          "pm.globals.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Log response time",
+          "console.log('Response time: ' + pm.response.responseTime + 'ms');",
+          "",
+          "// Save job ID from upload response",
+          "if (pm.response.code === 202 && pm.response.json().jobId) {",
+          "    pm.globals.set('job_id', pm.response.json().jobId);",
+          "    console.log('Job ID saved: ' + pm.response.json().jobId);",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "job_id",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+

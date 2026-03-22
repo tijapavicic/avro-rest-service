@@ -1,0 +1,5 @@
+column1,column2,column3,column4,column5,column6,column7,column8,column9,column10
+TEST-001,Test Product 1,Category A,100,10.50,USD,2026-03-22,Active,High,P1
+TEST-002,Test Product 2,Category B,200,20.00,USD,2026-03-23,Active,Medium,P2
+TEST-003,Test Product 3,Category C,300,30.00,USD,2026-03-24,Inactive,Low,P3
+

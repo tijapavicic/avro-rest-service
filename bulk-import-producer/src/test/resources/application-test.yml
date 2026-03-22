@@ -1,0 +1,16 @@
+# Test profile configuration for bulk import service
+
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/bulk_import_test
+
+bulk-import:
+  max-file-size: 10485760  # 10MB for tests
+  batch-size: 100
+  max-concurrent-jobs: 5
+
+logging:
+  level:
+    com.example.avro: DEBUG
+

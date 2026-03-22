@@ -1,0 +1,314 @@
+@startuml Bulk CSV Import Sequence Diagram
+scale 0.2
+!theme plain
+skinparam sequenceMessageAlign center
+skinparam backgroundColor #FEFEFE
+skinparam sequenceParticipant {
+    BackgroundColor<<boundary>> #A8D5FF
+    BackgroundColor<<control>> #FFE6A8
+    BackgroundColor<<entity>> #C8E6C9
+    BackgroundColor<<database>> #E1BEE7
+}
+
+title Bulk CSV Import - Reactive Streams Flow\n(500K Rows, 10 Columns, Async Processing)
+
+actor User as "Client\n(User/System)" #lightblue
+participant Controller as "BulkImportController\n<<REST>>" <<boundary>>
+participant FileValidator as "FileValidationService\n<<validation>>" <<control>>
+participant ImportJobSvc as "ImportJobService\n<<service>>" <<control>>
+participant Orchestrator as "CsvProcessingOrchestrator\n<<orchestrator>>" <<control>>
+participant CsvProcessor as "CsvStreamProcessor\n<<parser>>" <<control>>
+participant TransformSvc as "DataTransformationService\n<<business logic>>" <<control>>
+participant PersistSvc as "DataPersistenceService\n<<persistence>>" <<control>>
+database MongoDB as "MongoDB\n(import_jobs\n+ data_records)" <<database>>
+
+== Phase 1: Upload & Job Creation (Synchronous) ==
+
+User -> Controller: POST /api/v1/import/csv\n**multipart/form-data**\nContent-Type: multipart/form-data\nFile: data.csv (50MB, 500K rows)
+activate Controller
+
+Controller -> FileValidator: validate(filePart)
+activate FileValidator
+
+alt File Size > 500MB
+    FileValidator --> Controller: <font color=red>**413 Payload Too Large**</font>
+    Controller --> User: <font color=red>**413 Payload Too Large**</font>\n{"error": "File exceeds 500MB limit"}
+    destroy FileValidator
+    destroy Controller
+else Invalid Content Type
+    FileValidator --> Controller: <font color=red>**400 Bad Request**</font>
+    Controller --> User: <font color=red>**400 Bad Request**</font>\n{"error": "Invalid content type"}
+    destroy FileValidator
+    destroy Controller
+else Invalid Filename (path traversal)
+    FileValidator --> Controller: <font color=red>**400 Bad Request**</font>
+    Controller --> User: <font color=red>**400 Bad Request**</font>\n{"error": "Invalid filename"}
+    destroy FileValidator
+    destroy Controller
+else Valid File
+    FileValidator --> Controller: FilePart (validated)
+    deactivate FileValidator
+end
+
+Controller -> ImportJobSvc: createJob(ImportJob)
+activate ImportJobSvc
+
+ImportJobSvc -> MongoDB: save(ImportJob)\nstatus=PENDING
+activate MongoDB
+MongoDB --> ImportJobSvc: ImportJob saved\nid="65f1a2b3..."
+deactivate MongoDB
+
+ImportJobSvc --> Controller: ImportJob\nid="65f1a2b3..."\nstatus=PENDING
+deactivate ImportJobSvc
+
+Controller -> Orchestrator: processAsync(jobId, filePart)\n**Fire & Forget**
+note right: Async processing starts\nClient response sent immediately
+activate Orchestrator
+
+Controller --> User: <font color=green>**202 Accepted**</font>\n{\n  "jobId": "65f1a2b3...",\n  "status": "PENDING",\n  "statusUrl": "/api/v1/import/jobs/65f1a2b3..."\n}
+deactivate Controller
+
+== Phase 2: Async Processing (Background) ==
+
+note over Orchestrator: Processing on\nboundedElastic scheduler
+
+Orchestrator -> ImportJobSvc: startProcessing(jobId)
+activate ImportJobSvc
+ImportJobSvc -> MongoDB: update(jobId)\nstatus=PROCESSING\nstartedAt=now()
+activate MongoDB
+MongoDB --> ImportJobSvc: Updated
+deactivate MongoDB
+ImportJobSvc --> Orchestrator: Job updated
+deactivate ImportJobSvc
+
+Orchestrator -> CsvProcessor: parseAndTransform(filePart)
+activate CsvProcessor
+
+CsvProcessor -> CsvProcessor: Parse CSV headers\nExtract 10 columns
+
+loop For each CSV line (500K iterations)
+    CsvProcessor -> CsvProcessor: parseRecord(CSVRecord)\n→ DataRecord(line, col1-10)
+
+    CsvProcessor -> TransformSvc: transform(DataRecord)
+    activate TransformSvc
+
+    TransformSvc -> TransformSvc: Normalize column1\nCalculate column10\nApply business rules
+
+    alt Transformation Success
+        TransformSvc --> CsvProcessor: Transformed DataRecord
+    else Transformation Error
+        TransformSvc --> CsvProcessor: DataRecord with error flag
+        note right: Record marked as failed\nbut processing continues
+    end
+    deactivate TransformSvc
+
+    alt Validation Failed
+        CsvProcessor -> CsvProcessor: isValid() = false\nSkip record
+        note right: Record skipped\nfailedRows++
+    else Validation Passed
+        CsvProcessor -> CsvProcessor: Add to buffer
+    end
+
+    alt Buffer Full (1000 records)
+        CsvProcessor -> PersistSvc: persistBatch(jobId, List<1000>)
+        activate PersistSvc
+
+        PersistSvc -> PersistSvc: Set importJobId\nSet importedAt timestamp
+
+        PersistSvc -> MongoDB: saveAll(batch)\n**Batch Insert (1000 records)**
+        activate MongoDB
+
+        alt Database Transient Error
+            MongoDB --> PersistSvc: <font color=orange>TransientDataAccessException</font>
+            PersistSvc -> PersistSvc: Retry (attempt 1/3)
+            PersistSvc -> MongoDB: saveAll(batch) - Retry
+            MongoDB --> PersistSvc: Success
+        else Database Timeout
+            MongoDB --> PersistSvc: <font color=red>Timeout after 30s</font>
+            PersistSvc -> PersistSvc: Log error\nSkip batch
+            note right: Batch marked as failed\nProcessing continues
+        else Success
+            MongoDB --> PersistSvc: List<DataRecord> saved
+        end
+        deactivate MongoDB
+
+        PersistSvc --> CsvProcessor: Batch persisted (900/1000)
+        deactivate PersistSvc
+
+        CsvProcessor -> ImportJobSvc: updateProgress(jobId, 1000, 100)
+        activate ImportJobSvc
+        ImportJobSvc -> MongoDB: update progress
+        activate MongoDB
+        MongoDB --> ImportJobSvc: Updated
+        deactivate MongoDB
+        deactivate ImportJobSvc
+
+        note right: Progress: 1000 processed,\n100 failed
+    end
+end
+
+CsvProcessor --> Orchestrator: Processing complete\nFlux finished
+deactivate CsvProcessor
+
+Orchestrator -> ImportJobSvc: completeJob(jobId, 499900, 100)
+activate ImportJobSvc
+
+alt No Failed Records
+    ImportJobSvc -> MongoDB: update(jobId)\nstatus=COMPLETED\nprocessedRows=500000\nfailedRows=0\ncompletedAt=now()
+    activate MongoDB
+    MongoDB --> ImportJobSvc: Updated
+    deactivate MongoDB
+else Some Failed Records
+    ImportJobSvc -> MongoDB: update(jobId)\nstatus=COMPLETED_WITH_ERRORS\nprocessedRows=499900\nfailedRows=100\ncompletedAt=now()
+    activate MongoDB
+    MongoDB --> ImportJobSvc: Updated
+    deactivate MongoDB
+end
+
+ImportJobSvc --> Orchestrator: Job completed
+deactivate ImportJobSvc
+
+note over Orchestrator: Processing finished\nTotal time: 35-70 sec\nMemory: 5-20 MB
+
+Orchestrator -> Orchestrator: Metrics recorded:\n- Records processed: 499900\n- Records failed: 100\n- Duration: 45 sec
+deactivate Orchestrator
+
+== Phase 3: Status Polling (Client Initiated) ==
+
+User -> Controller: GET /api/v1/import/jobs/{jobId}
+activate Controller
+
+Controller -> ImportJobSvc: getJob(jobId)
+activate ImportJobSvc
+
+ImportJobSvc -> MongoDB: findById(jobId)
+activate MongoDB
+
+alt Job Not Found
+    MongoDB --> ImportJobSvc: null
+    ImportJobSvc --> Controller: empty Mono
+    Controller --> User: <font color=orange>**404 Not Found**</font>\n{"error": "Job not found"}
+    deactivate MongoDB
+    deactivate ImportJobSvc
+    deactivate Controller
+else Job Found - Processing
+    MongoDB --> ImportJobSvc: ImportJob\nstatus=PROCESSING\nprocessedRows=250000
+    deactivate MongoDB
+    ImportJobSvc --> Controller: ImportJob
+    deactivate ImportJobSvc
+    Controller --> User: <font color=green>**200 OK**</font>\n{\n  "status": "PROCESSING",\n  "processedRows": 250000,\n  "totalRows": 500000,\n  "progress": "50%"\n}
+    deactivate Controller
+end
+
+... Wait 30 seconds ...
+
+User -> Controller: GET /api/v1/import/jobs/{jobId}
+activate Controller
+
+Controller -> ImportJobSvc: getJob(jobId)
+activate ImportJobSvc
+
+ImportJobSvc -> MongoDB: findById(jobId)
+activate MongoDB
+MongoDB --> ImportJobSvc: ImportJob\nstatus=COMPLETED_WITH_ERRORS\nprocessedRows=499900\nfailedRows=100
+deactivate MongoDB
+
+ImportJobSvc --> Controller: ImportJob
+deactivate ImportJobSvc
+
+Controller --> User: <font color=green>**200 OK**</font>\n{\n  "status": "COMPLETED_WITH_ERRORS",\n  "processedRows": 499900,\n  "failedRows": 100,\n  "totalRows": 500000,\n  "completedAt": "2026-03-22T10:32:15"\n}
+deactivate Controller
+
+== Phase 4: Error Scenarios ==
+
+group Optional: Catastrophic Failure Scenario
+
+    note over Orchestrator: Fatal error during processing\n(e.g., MongoDB connection lost)
+
+    Orchestrator -> ImportJobSvc: failJob(jobId, errorMessage)
+    activate Orchestrator
+    activate ImportJobSvc
+
+    ImportJobSvc -> MongoDB: update(jobId)\nstatus=FAILED\nerrorMessage="DB connection lost"\ncompletedAt=now()
+    activate MongoDB
+    MongoDB --> ImportJobSvc: Updated
+    deactivate MongoDB
+
+    ImportJobSvc --> Orchestrator: Job marked as failed
+    deactivate ImportJobSvc
+    deactivate Orchestrator
+
+    User -> Controller: GET /api/v1/import/jobs/{jobId}
+    activate Controller
+    activate ImportJobSvc
+    activate MongoDB
+
+    Controller -> ImportJobSvc: getJob(jobId)
+    ImportJobSvc -> MongoDB: findById(jobId)
+    MongoDB --> ImportJobSvc: ImportJob (FAILED)
+    deactivate MongoDB
+    ImportJobSvc --> Controller: ImportJob
+    deactivate ImportJobSvc
+
+    Controller --> User: <font color=green>**200 OK**</font>\n{\n  "status": "FAILED",\n  "errorMessage": "DB connection lost",\n  "processedRows": 250000,\n  "failedRows": 0\n}
+    deactivate Controller
+
+end
+
+group Optional: Rate Limiting Scenario
+
+    User -> Controller: POST /api/v1/import/csv\n(11th concurrent request)
+    activate Controller
+
+    Controller -> Controller: Check rate limiter\n(max 10 concurrent)
+
+    Controller --> User: <font color=red>**429 Too Many Requests**</font>\nRetry-After: 60\nX-RateLimit-Limit: 10\n{\n  "error": "Too many concurrent imports",\n  "retryAfter": 60\n}
+    deactivate Controller
+
+end
+
+group Optional: Service Unavailable Scenario
+
+    User -> Controller: POST /api/v1/import/csv
+    activate Controller
+
+    Controller -> MongoDB: Check connection
+    activate MongoDB
+
+    alt MongoDB Down
+        MongoDB --> Controller: <font color=red>Connection refused</font>
+        deactivate MongoDB
+
+        Controller --> User: <font color=red>**503 Service Unavailable**</font>\nRetry-After: 120\n{\n  "error": "Database temporarily unavailable",\n  "retryAfter": 120\n}
+    end
+    deactivate Controller
+
+end
+
+== HTTP Status Codes Summary ==
+
+note over User, MongoDB
+    <b><u>HTTP Status Codes Used:</u></b>
+
+    <b><font color=green>Success Codes:</font></b>
+    • <b>202 Accepted</b> - Import job created, processing async
+    • <b>200 OK</b> - Job status retrieved successfully
+
+    <b><font color=red>Client Errors:</font></b>
+    • <b>400 Bad Request</b> - Invalid file format, content type, or filename
+    • <b>404 Not Found</b> - Job ID not found
+    • <b>413 Payload Too Large</b> - File size exceeds 500MB limit
+    • <b>429 Too Many Requests</b> - Rate limit exceeded
+
+    <b><font color=red>Server Errors:</font></b>
+    • <b>500 Internal Server Error</b> - Unexpected server error
+    • <b>503 Service Unavailable</b> - Database unavailable, retry later
+
+    <b>Job Status Values:</b>
+    • PENDING → PROCESSING → COMPLETED
+    • PENDING → PROCESSING → COMPLETED_WITH_ERRORS
+    • PENDING → PROCESSING → FAILED
+end note
+
+@enduml
+
