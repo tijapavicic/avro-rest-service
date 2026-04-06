@@ -1,0 +1,71 @@
+@startuml keycloak-sequence-full-flow
+!theme plain
+scale 0.3
+
+title Keycloak Authentication Flow - Authorization Code + PKCE\n(Full Flow with JWT Validation)
+
+actor User
+participant "Browser\n(SPA)" as Browser
+participant "Keycloak\nServer" as Keycloak
+participant "Backend\n(API)" as Backend
+
+autonumber
+
+== Authentication Phase ==
+
+User -> Browser: Click Login
+
+Browser -> Browser: Generate PKCE\n• code_verifier\n• code_challenge\n(S256 hash)
+
+Browser -> Keycloak: Redirect to Authorization Endpoint\n• code_challenge\n• client_id: frontend-spa\n• redirect_uri\n• response_type: code\n• scope: openid profile email
+
+Keycloak -> User: Present Login Screen
+
+User -> Keycloak: Enter Credentials\n(username/password)
+
+Keycloak -> Keycloak: Validate Credentials
+
+Keycloak -> Browser: Return Authorization Code\n(redirect to callback URI)
+
+Browser -> Keycloak: Exchange Code for Tokens\nPOST /token\n• code\n• code_verifier\n• client_id\n• grant_type: authorization_code
+
+Keycloak -> Keycloak: Verify PKCE\n(code_challenge matches\ncode_verifier)
+
+Keycloak -> Browser: Return Tokens:\n• access_token (JWT)\n• refresh_token\n• id_token
+
+Browser -> Browser: Store tokens in memory\n(not localStorage)
+
+Browser -> User: User Authenticated\n(display logged-in state)
+
+== API Access Phase ==
+
+User -> Browser: Request API Data
+
+Browser -> Backend: API Call\nGET /api/data\nAuthorization: Bearer <access_token>
+
+Backend -> Keycloak: Fetch JWKS\n(first time or cached)
+
+Keycloak -> Backend: Public Keys\n(RSA key pairs)
+
+Backend -> Backend: Validate JWT:\n• Signature (JWKS)\n• Issuer\n• Expiry (exp)\n• Audience (aud)\n• Not Before (nbf)
+
+Backend -> Backend: Extract Claims:\n• Roles\n• Scopes\n• Permissions
+
+Backend -> Backend: Authorize:\nCheck user has\nrequired roles\n(@PreAuthorize)
+
+Backend -> Browser: API Response\n200 OK\n{ data }
+
+Browser -> User: Display Data
+
+note over Browser, Backend
+    All API requests include:
+    Authorization: Bearer <access_token>
+
+    Token stored in memory only
+    (cleared on page refresh/logout)
+end note
+
+footer Keycloak 26.5.7 | Authorization Code + PKCE Flow | Generated: April 7, 2026
+
+@enduml
+

@@ -1,0 +1,85 @@
+@startuml keycloak-architecture
+!define RECTANGLE class
+
+skinparam rectangle {
+    BackgroundColor<<keycloak>> LightSkyBlue
+    BackgroundColor<<frontend>> LightGreen
+    BackgroundColor<<backend>> LightCoral
+    BorderColor Black
+    FontSize 12
+}
+
+skinparam note {
+    BackgroundColor LightYellow
+    BorderColor Black
+}
+
+title Keycloak Authentication Architecture\n(Web Components + Spring Boot)
+
+package "Keycloak Server\n(Authorization Server)\nhttps://keycloak.example.com" <<keycloak>> {
+    rectangle "Realm: my-realm" as realm {
+        component "Clients" as clients {
+            [frontend-spa\n(public, PKCE)]
+            [backend-api\n(resource server)]
+        }
+
+        component "Endpoints" as endpoints {
+            [/auth\n(Authorization)]
+            [/token\n(Token Exchange)]
+            [/certs\n(JWKS - Public Keys)]
+            [/.well-known/openid-configuration\n(Discovery)]
+        }
+    }
+}
+
+package "Frontend (Browser)\nWeb Components" <<frontend>> {
+    rectangle "Client Type: Public\nFlow: Authorization Code + PKCE" as frontend_details {
+        component "Responsibilities" as frontend_resp {
+            note right
+                ✓ Initiate login
+                ✓ Handle auth callback
+                ✓ Store tokens (memory)
+                ✓ Send Bearer tokens
+                ✗ Validate tokens
+                ✗ Enforce permissions
+            end note
+        }
+    }
+}
+
+package "Backend (Spring Boot)\nResource Server" <<backend>> {
+    rectangle "OAuth2 Resource Server" as backend_details {
+        component "Token Validation" as token_validation {
+            note right
+                • JWT signature (JWKS)
+                • Issuer verification
+                • Expiry check
+                • Audience validation
+            end note
+        }
+
+        component "Authorization" as authorization {
+            note right
+                • Role-based access
+                • Scope enforcement
+                • Permission checks
+            end note
+        }
+    }
+}
+
+' Relationships
+frontend_details -up-> realm : "OIDC/OAuth2\nAuth Flow"
+backend_details -up-> realm : "JWT Validation\n(JWKS)"
+frontend_details -right-> backend_details : "API Requests\nAuthorization: Bearer <token>\n(HTTPS Required)"
+
+legend right
+    |= Symbol |= Meaning |
+    | ✓ | Responsibility |
+    | ✗ | Not Responsible |
+endlegend
+
+footer Keycloak 26.5.7 | Generated: April 7, 2026
+
+@enduml
+

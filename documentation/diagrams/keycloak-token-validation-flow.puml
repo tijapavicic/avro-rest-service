@@ -1,0 +1,94 @@
+@startuml keycloak-token-validation-flow
+!theme plain
+scale 0.2
+
+title JWT Token Validation Flow\n(Spring Boot Resource Server)
+
+start
+
+:Backend receives API request;
+note right
+    Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6...
+end note
+
+:1. Extract JWT Token\nfrom Authorization header;
+
+:2. Decode JWT Header\nExtract 'kid' (Key ID);
+
+:3. Fetch JWKS from Keycloak\n(or use cached keys);
+note right
+    GET /realms/my-realm/protocol/openid-connect/certs
+
+    Response contains RSA public keys
+    with corresponding 'kid' identifiers
+end note
+
+:4. Find Public Key\nmatching 'kid';
+
+:5. Verify Signature\nRS256 / RSA algorithm;
+
+if (Signature Valid?) then (yes)
+    :6. Validate JWT Claims;
+    note right
+        • iss (issuer) - must match expected issuer
+        • exp (expiry) - token not expired
+        • aud (audience) - contains expected audience
+        • nbf (not before) - token is already valid
+        • iat (issued at) - reasonable timestamp
+    end note
+
+    if (All Claims Valid?) then (yes)
+        :7. Extract Roles & Scopes\nfrom JWT payload;
+        note right
+            Extract from:
+            resource_access.backend-api.roles
+
+            Example:
+            • api-user
+            • data-read
+        end note
+
+        :8. Authorize Request\nCheck @PreAuthorize\nannotations;
+
+        if (Has Required Permission?) then (yes)
+            #LightGreen:200 OK\nProcess Request\nReturn Data;
+            stop
+        else (no)
+            #LightCoral:403 Forbidden\nInsufficient Permissions;
+            note right
+                User authenticated but lacks
+                required role/permission
+            end note
+            stop
+        endif
+    else (no)
+        #LightCoral:401 Unauthorized\nClaims Invalid;
+        note right
+            Possible issues:
+            • Token expired
+            • Wrong issuer
+            • Invalid audience
+            • Token used before nbf
+        end note
+        stop
+    endif
+else (no)
+    #LightCoral:401 Unauthorized\nInvalid Token Signature;
+    note right
+        Token has been tampered with
+        or signed by wrong key
+    end note
+    stop
+endif
+
+legend right
+    |= Status |= Meaning |
+    | 200 OK | Success - authorized |
+    | 401 Unauthorized | Invalid/expired token |
+    | 403 Forbidden | Valid token, insufficient permissions |
+endlegend
+
+footer Keycloak 26.5.7 | JWT Validation Flow | Generated: April 7, 2026
+
+@enduml
+

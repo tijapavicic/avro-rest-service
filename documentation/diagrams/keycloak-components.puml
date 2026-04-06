@@ -1,0 +1,145 @@
+@startuml keycloak-components
+!theme plain
+scale 0.3
+
+skinparam component {
+    BackgroundColor<<keycloak>> LightSkyBlue
+    BackgroundColor<<frontend>> LightGreen
+    BackgroundColor<<backend>> LightCoral
+    BackgroundColor<<client>> Wheat
+    BorderColor Black
+}
+
+title Keycloak System Components\n(Web Components + Spring Boot Resource Server)
+
+package "Keycloak Realm: my-realm" <<keycloak>> {
+
+    component "frontend-spa" <<client>> {
+        [Type: Public]
+        [Protocol: openid-connect]
+        [Access Type: public]
+
+        note right of [Type: Public]
+            Settings:
+            ✓ Standard Flow Enabled
+            ✓ PKCE: S256
+            ✗ Implicit Flow
+            ✗ Direct Access Grants
+
+            Valid Redirect URIs:
+            • http://localhost:3000/*
+            • https://app.example.com/*
+
+            Web Origins:
+            • http://localhost:3000
+            • https://app.example.com
+        end note
+    }
+
+    component "backend-api" <<client>> {
+        [Type: Resource Server]
+        [Protocol: openid-connect]
+        [Access Type: bearer-only]
+
+        note right of [Type: Resource Server]
+            Purpose:
+            • Represents API as protected resource
+            • Defines roles for authorization
+            • Not used for authentication flows
+
+            Roles:
+            • api-user (basic API access)
+            • api-admin (administrative access)
+            • data-read (read data)
+            • data-write (write data)
+        end note
+    }
+
+    database "Users & Roles" {
+        component "john.doe@example.com" {
+            note bottom
+                Roles:
+                • api-user
+                • data-read
+            end note
+        }
+
+        component "admin@example.com" {
+            note bottom
+                Roles:
+                • api-admin
+                • api-user
+                • data-read
+                • data-write
+            end note
+        }
+    }
+}
+
+package "Frontend Application (Browser)" <<frontend>> {
+    component "Web Components\n(Lit / Stencil / Custom Elements)" {
+        [Login Button\nComponent]
+
+        component "Auth Service" {
+            [PKCE Generator]
+            [Token Store]
+            [Refresh Handler]
+        }
+
+        component "API Client" {
+            [Add Bearer Token]
+            [Handle 401]
+            [Retry Logic]
+        }
+
+        [User Profile\nComponent]
+    }
+
+    note bottom of "Web Components\n(Lit / Stencil / Custom Elements)"
+        Token Storage: Memory (JavaScript variables)
+        No localStorage for access tokens (security)
+    end note
+}
+
+package "Backend Application (Spring Boot)" <<backend>> {
+    component "Spring Security OAuth2 Resource Server" {
+
+        component "Security Filter Chain" {
+            rectangle "1. BearerTokenAuthenticationFilter" as filter1
+            rectangle "2. JwtAuthenticationProvider" as filter2
+            rectangle "3. JwtGrantedAuthoritiesConverter" as filter3
+            rectangle "4. AuthorizationFilter" as filter4
+
+            filter1 -down-> filter2
+            filter2 -down-> filter3
+            filter3 -down-> filter4
+        }
+
+        component "REST Controllers" {
+            [GET /api/data\n@PreAuthorize("hasAuthority('data-read')")]
+            [POST /api/data\n@PreAuthorize("hasAuthority('data-write')")]
+        }
+    }
+
+    note bottom of "Spring Security OAuth2 Resource Server"
+        application.yml:
+        spring:
+          security:
+            oauth2:
+              resourceserver:
+                jwt:
+                  issuer-uri: https://keycloak.example.com/realms/my-realm
+    end note
+}
+
+' Relationships
+"frontend-spa" .up.> "Users & Roles" : authenticates
+"backend-api" .up.> "Users & Roles" : roles/permissions
+"Web Components\n(Lit / Stencil / Custom Elements)" -up-> "frontend-spa" : OIDC/OAuth2 flow
+"Spring Security OAuth2 Resource Server" -up-> "backend-api" : validates against
+"Web Components\n(Lit / Stencil / Custom Elements)" -right-> "Spring Security OAuth2 Resource Server" : HTTPS\nBearer Token
+
+footer Keycloak 26.5.7 | Component Architecture | Generated: April 7, 2026
+
+@enduml
+

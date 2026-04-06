@@ -3,6 +3,7 @@
 skinparam backgroundColor #FFFFFF
 skinparam defaultFontSize 11
 skinparam classAttributeIconSize 0
+scale 0.5
 
 title <size:16><b>Bulk CSV Import - Class Diagram</b></size>\n<size:12>Domain Model | Producer & Consumer Modules</size>
 

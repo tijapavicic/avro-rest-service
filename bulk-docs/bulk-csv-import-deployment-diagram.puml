@@ -2,6 +2,7 @@
 !theme plain
 skinparam backgroundColor #FFFFFF
 skinparam defaultFontSize 11
+scale 0.5
 
 title <size:16><b>Bulk CSV Import - Deployment Architecture</b></size>\n<size:12>Production Infrastructure | Cloud-Ready | Scalable</size>
 

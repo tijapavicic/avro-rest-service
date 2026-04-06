@@ -1,0 +1,123 @@
+@startuml keycloak-client-configuration
+!theme plain
+
+skinparam component {
+    BackgroundColor<<public>> LightGreen
+    BackgroundColor<<resource>> LightCoral
+    BorderColor Black
+}
+
+title Keycloak Client Configurations\n(Public Client vs Resource Server)
+
+package "Keycloak Realm: my-realm" {
+
+    component "frontend-spa" <<public>> as frontend {
+    }
+
+    note right of frontend
+        **Frontend Client (Public)**
+
+        Client ID: frontend-spa
+        Client Type: Public
+        Protocol: openid-connect
+        Access Type: public
+
+        **Flows:**
+        ✓ Standard Flow (Authorization Code)
+        ✓ PKCE Required: S256
+        ✗ Implicit Flow (deprecated)
+        ✗ Direct Access Grants
+        ✗ Service Accounts
+
+        **Authentication:**
+        ✗ Client Authentication: OFF
+        (Public client - no secret)
+
+        **URLs:**
+        Root URL: https://app.example.com
+        Valid Redirect URIs:
+          • https://app.example.com/*
+          • http://localhost:3000/*
+        Web Origins:
+          • https://app.example.com
+          • http://localhost:3000
+
+        **Settings:**
+        Consent Required: No
+        Access Token Lifespan: 5 minutes
+
+        **Scopes:**
+        • openid
+        • profile
+        • email
+    end note
+
+    component "backend-api" <<resource>> as backend {
+    }
+
+    note left of backend
+        **Backend API (Resource Server)**
+
+        Client ID: backend-api
+        Client Type: Resource Server
+        Protocol: openid-connect
+        Access Type: bearer-only
+
+        **Purpose:**
+        • Represents API as protected resource
+        • Defines roles for authorization
+        • Not used for authentication flows
+
+        **Roles:**
+        • api-user (Basic API access)
+        • api-admin (Administrative access)
+        • data-read (Read data permission)
+        • data-write (Write data permission)
+
+        **Role Assignment Methods:**
+        • Direct assignment
+        • Group membership
+        • Composite roles
+        • Identity provider mappers
+
+        **Token Claims:**
+        resource_access:
+          backend-api:
+            roles:
+              - api-user
+              - data-read
+    end note
+}
+
+note top of frontend
+    **Use Case:**
+    Browser-based SPA that authenticates users
+    and obtains access tokens to call the API
+
+    **Security Pattern:**
+    Authorization Code + PKCE (S256)
+    No client secret (public client)
+end note
+
+note bottom of backend
+    **Use Case:**
+    REST API that validates JWTs and enforces
+    role-based access control
+
+    **Security Pattern:**
+    Bearer-only (validates tokens, doesn't issue them)
+    Uses JWKS to verify JWT signatures
+end note
+
+frontend -[hidden]right-> backend
+
+legend right
+    |= Symbol |= Meaning |
+    | ✓ | Enabled |
+    | ✗ | Disabled |
+endlegend
+
+footer Keycloak 26.5.7 | Client Configuration Details | Generated: April 7, 2026
+
+@enduml
+

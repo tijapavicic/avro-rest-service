@@ -1,0 +1,125 @@
+@startuml keycloak-deployment
+!theme plain
+scale 0.3
+
+title Keycloak Deployment Architecture\n(Production Environment)
+
+skinparam node {
+    BackgroundColor<<server>> LightSkyBlue
+    BackgroundColor<<app>> LightGreen
+    BackgroundColor<<db>> Wheat
+    BorderColor Black
+}
+
+skinparam cloud {
+    BackgroundColor<<internet>> LightYellow
+}
+
+cloud "Internet" <<internet>> {
+    actor "End User" as user
+}
+
+node "Load Balancer\n(HTTPS/TLS 1.2+)" as lb {
+    [Nginx/HAProxy]
+}
+
+node "Keycloak Server\n(Authorization Server)" <<server>> {
+    component "Keycloak\n26.5.7" as keycloak {
+        [Realm: my-realm]
+        [OIDC Provider]
+        [JWT Issuer]
+        [JWKS Endpoint]
+    }
+}
+
+node "Frontend Server" <<app>> {
+    component "Web Application" as webapp {
+        [Static Files\n(HTML/JS/CSS)]
+        [Web Components]
+        [PKCE Implementation]
+    }
+}
+
+node "Backend Server" <<app>> {
+    component "Spring Boot API" as springboot {
+        [OAuth2 Resource Server]
+        [JWT Validation]
+        [Role-Based Access Control]
+        [REST Endpoints]
+    }
+}
+
+database "Keycloak Database" <<db>> {
+    [User Accounts]
+    [Client Configurations]
+    [Sessions]
+    [Roles & Permissions]
+}
+
+database "Application Database" <<db>> {
+    [Business Data]
+}
+
+' User flows
+user -> lb : HTTPS requests
+
+' Authentication flow
+lb -> webapp : Serve SPA
+lb -> keycloak : Auth requests\n(/auth, /token)
+keycloak -> "Keycloak Database" : Read/Write
+
+' API flow
+lb -> springboot : API requests\n(with Bearer token)
+springboot -> keycloak : Fetch JWKS\n(validate tokens)
+springboot -> "Application Database" : CRUD operations
+
+' Internal
+webapp ..> keycloak : OAuth2/OIDC\nAuthorization Code + PKCE
+springboot ..> keycloak : JWT validation\n(JWKS)
+
+note top of lb
+    **Security Layer:**
+    • TLS 1.2+ only
+    • HTTPS enforcement
+    • Rate limiting
+    • CORS headers
+end note
+
+note right of keycloak
+    **Keycloak Configuration:**
+    • HTTPS required
+    • Realm: my-realm
+    • Clients: frontend-spa, backend-api
+    • Token lifespan: 5 minutes (access)
+    • Session management enabled
+end note
+
+note bottom of springboot
+    **Spring Security:**
+    • OAuth2 Resource Server
+    • JWT signature validation (JWKS)
+    • Issuer verification
+    • @PreAuthorize for endpoints
+    • Rate limiting on token validation
+end note
+
+note bottom of webapp
+    **Frontend Security:**
+    • PKCE (S256) enabled
+    • Token storage: memory only
+    • No localStorage for access tokens
+    • Automatic token refresh
+    • Handle 401/403 responses
+end note
+
+legend right
+    |= Component |= Protocol |
+    | Frontend ↔ Keycloak | OIDC/OAuth2 |
+    | Backend ↔ Keycloak | HTTPS (JWKS) |
+    | Frontend ↔ Backend | HTTPS (Bearer Token) |
+endlegend
+
+footer Keycloak 26.5.7 | Production Deployment | Generated: April 7, 2026
+
+@enduml
+
