@@ -1,11 +1,23 @@
 # 🧪 Testing the Simulation Launcher Component
 
 **Created:** April 7, 2026  
-**Purpose:** Test the enhanced UI with progress bar and parameter table  
+**Updated:** April 7, 2026  
+**Purpose:** Comprehensive testing guide with modern design and 215+ unit tests
 
 ---
 
-## 🚀 Quick Test (3 Steps)
+## 📋 Table of Contents
+
+1. [Quick Manual Testing](#quick-manual-testing)
+2. [Automated Unit Tests](#automated-unit-tests)
+3. [Running Tests](#running-tests)
+4. [Test Coverage](#test-coverage)
+5. [Visual Tests](#visual-tests)
+6. [Functional Tests](#functional-tests)
+
+---
+
+## 🚀 Quick Manual Testing
 
 ### Step 1: Open Test Page
 
@@ -32,6 +44,111 @@ cd sim-engine-frontend
 # Terminal 2: Open test page
 open test.html
 ```
+
+---
+
+## 🤖 Automated Unit Tests
+
+### Test Suite Overview
+
+We have **215+ comprehensive unit tests** covering all modules:
+
+| Test File | Module | Tests | Purpose |
+|-----------|--------|-------|---------|
+| `validators.test.js` | ParameterValidator | 40+ | Input validation & security |
+| `error-handler.test.js` | ErrorHandler | 45+ | Error categorization & formatting |
+| `progress-manager.test.js` | ProgressManager | 50+ | Progress state management |
+| `api-client.test.js` | ApiClient | 45+ | HTTP communication |
+| `integration.test.js` | SimulationLauncher | 35+ | End-to-end workflows |
+
+### Installation
+
+```bash
+cd /Users/copor/CodexProjects/avro-rest-service/sim-engine-frontend
+npm install
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm test
+
+# Run unit tests only
+npm run test:unit
+
+# Run integration tests
+npm run test:integration
+
+# Watch mode (auto-rerun on changes)
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+
+# Verbose output
+npm run test:verbose
+```
+
+### Test Examples
+
+#### Validation Tests
+```javascript
+✓ should pass with all valid parameters
+✓ should fail with p1 out of range (negative)
+✓ should handle decimal values correctly
+✓ should reject SQL injection attempts
+✓ should validate 1000 parameter sets quickly
+```
+
+#### Error Handler Tests
+```javascript
+✓ should detect network error from TypeError
+✓ should handle 400 Bad Request
+✓ should handle 500 Internal Server Error
+✓ should escape HTML in error messages
+✓ should mark network errors as retryable
+```
+
+#### Progress Manager Tests
+```javascript
+✓ should update to 50%
+✓ should clamp progress above 100%
+✓ should update to VALIDATING stage (10%)
+✓ should use blue color for low progress
+✓ should handle rapid updates efficiently
+```
+
+#### API Client Tests
+```javascript
+✓ should send POST request with payload
+✓ should include default headers
+✓ should handle 404 Not Found
+✓ should handle timeout errors
+✓ should serialize object payloads
+```
+
+#### Integration Tests
+```javascript
+✓ should render in the DOM
+✓ should submit valid parameters successfully
+✓ should show progress during submission
+✓ should prevent submission with invalid parameters
+✓ should handle rapid button clicks
+```
+
+### Coverage Report
+
+After running `npm run test:coverage`, open:
+```bash
+open coverage/lcov-report/index.html
+```
+
+**Coverage Targets:**
+- Statements: 70%+
+- Branches: 70%+  
+- Functions: 70%+
+- Lines: 70%+
 
 ---
 

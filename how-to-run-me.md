@@ -241,6 +241,22 @@ Expected:
 
 To call the WebFlux module instead, replace `8082` with `8085`.
 
+### 5.2.2.0 Note on gzip vs NDJSON
+
+```shell
+cd /Users/copor/CodexProjects/avro-rest-service/sim-engine-frontend
+
+# Install dependencies
+npm install
+
+# Run all tests
+npm test
+
+# Generate coverage report
+npm run test:coverage
+```
+
+
 ### 5.2.2 NDJSON streaming test
 
 For very large uploads, NDJSON is often easier to stream because items are sent one line at a time.
