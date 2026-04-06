@@ -3,153 +3,288 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Simulation Launcher - Modular Architecture</title>
+  <title>Sim Engine Pro | Modular Architecture</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+    /* Override main layout for modular demo */
+    .app-main {
+      padding: 2rem;
     }
 
-    body {
-      background: linear-gradient(135deg, #0f1117 0%, #1a1d27 100%);
-      min-height: 100vh;
+    .hero {
+      max-width: 1000px;
+    }
+
+    /* Architecture Section Styles */
+    .architecture-section {
+      margin-top: 3rem;
+      animation: fadeIn 1s ease-out 0.6s both;
+    }
+
+    .arch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin-top: 1.5rem;
+    }
+
+    .arch-card {
+      background: rgba(30, 41, 59, 0.3);
+      border: 1px solid rgba(71, 85, 105, 0.3);
+      border-radius: 12px;
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .arch-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--gradient-accent);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .arch-card:hover {
+      border-color: rgba(96, 165, 250, 0.4);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .arch-card:hover::before {
+      opacity: 1;
+    }
+
+    .arch-card-icon {
+      width: 40px;
+      height: 40px;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 2rem;
-      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: linear-gradient(135deg, rgba(96, 165, 250, 0.2) 0%, rgba(167, 139, 250, 0.2) 100%);
+      border-radius: 10px;
+      margin-bottom: 0.75rem;
+      font-size: 1.25rem;
     }
 
-    .header {
-      text-align: center;
-      margin-bottom: 2rem;
-      color: #e2e8f0;
-    }
-
-    .header h1 {
-      font-size: 2.5rem;
-      font-weight: 700;
+    .arch-card h4 {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: #c4b5fd;
       margin-bottom: 0.5rem;
-      background: linear-gradient(90deg, #4f8ef7, #6aa3ff);
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    }
+
+    .arch-card p {
+      font-size: 0.8125rem;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-header h3 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      background: var(--gradient-accent);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .header p {
-      color: #94a3b8;
-      font-size: 1rem;
+    .section-icon {
+      font-size: 1.5rem;
     }
 
-    .header .architecture-badge {
-      display: inline-block;
-      margin-top: 0.5rem;
-      padding: 0.4rem 1rem;
-      background: #1f3b2f;
-      color: #C1E1C1;
-      border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 800px;
-    }
-
-    .footer {
+    /* Tech Links */
+    .tech-links {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
       margin-top: 2rem;
-      text-align: center;
-      color: #64748b;
-      font-size: 0.85rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(71, 85, 105, 0.3);
     }
 
-    .footer a {
-      color: #4f8ef7;
+    .tech-link {
+      color: #60a5fa;
       text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.2);
+      transition: all 0.2s ease;
     }
 
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    .tech-stack {
-      margin-top: 1.5rem;
-      padding: 1.5rem;
-      background: #1a1d27;
-      border: 1px solid #2e3347;
-      border-radius: 12px;
-    }
-
-    .tech-stack h3 {
-      color: #B4D7E8;
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
-      font-weight: 600;
-    }
-
-    .tech-stack ul {
-      list-style: none;
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 0.75rem;
-    }
-
-    .tech-stack li {
-      color: #94a3b8;
-      font-size: 0.85rem;
-      padding: 0.5rem;
-      background: #0f1117;
-      border-radius: 6px;
-      border-left: 3px solid #4f8ef7;
-    }
-
-    .tech-stack li strong {
-      color: #E0BBE4;
-      font-family: monospace;
+    .tech-link:hover {
+      background: rgba(96, 165, 250, 0.2);
+      border-color: rgba(96, 165, 250, 0.4);
+      transform: translateY(-1px);
     }
   </style>
 </head>
 <body>
+  <!-- Animated background -->
+  <div class="bg-gradient"></div>
+  <div class="bg-pattern"></div>
 
-  <div class="header">
-    <h1>🚀 Simulation Launcher</h1>
-    <p>Enterprise-grade Web Component with Modular Architecture</p>
-    <span class="architecture-badge">✨ Separation of Concerns</span>
-  </div>
-
-  <div class="container">
-    <!-- The Web Component -->
-    <simulation-launcher
-      backend-url="http://localhost:8082/api/simulations"
-      system-id="SYS-001">
-    </simulation-launcher>
-
-    <!-- Tech Stack Info -->
-    <div class="tech-stack">
-      <h3>📦 Modular Architecture</h3>
-      <ul>
-        <li><strong>validators.js</strong> - Input validation logic</li>
-        <li><strong>error-handler.js</strong> - Error categorization</li>
-        <li><strong>progress-manager.js</strong> - Progress state</li>
-        <li><strong>api-client.js</strong> - HTTP communication</li>
-        <li><strong>html-template.js</strong> - Template generation</li>
-        <li><strong>style-loader.js</strong> - CSS management</li>
-        <li><strong>*.css</strong> - Separated style modules</li>
-        <li><strong>simulation-launcher.js</strong> - Main orchestrator</li>
-      </ul>
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="logo-text">
+          <span class="logo-title">Sim Engine</span>
+          <span class="logo-subtitle">Pro</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active">Modular</button>
+        <button class="nav-btn">Architecture</button>
+        <button class="nav-btn">Docs</button>
+      </nav>
     </div>
-  </div>
+  </header>
 
-  <div class="footer">
-    <p>
-      Built with modern web standards •
-      <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank">Web Components</a> •
-      <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules" target="_blank">ES Modules</a>
-    </p>
-  </div>
+  <main class="app-main">
+    <section class="hero">
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="8" fill="url(#badge-gradient)"/>
+          <circle cx="8" cy="8" r="4" fill="white"/>
+          <defs>
+            <linearGradient id="badge-gradient" x1="0" y1="0" x2="16" y2="16">
+              <stop offset="0%" stop-color="#60A5FA"/>
+              <stop offset="100%" stop-color="#A78BFA"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>Modular Architecture Demo</span>
+      </div>
+      <h1 class="hero-title">
+        Enterprise-Grade <span class="gradient-text">Components</span>
+      </h1>
+      <p class="subtitle">
+        Built with separation of concerns, clean architecture principles, and modern ES modules.
+        Each component is focused, testable, and maintainable.
+      </p>
+
+      <!-- The Web Component -->
+      <simulation-launcher
+        backend-url="http://localhost:8082/api/simulations"
+        system-id="SYS-001">
+      </simulation-launcher>
+
+      <!-- Architecture Info -->
+      <div class="architecture-section">
+        <div class="section-header">
+          <span class="section-icon">🏗️</span>
+          <h3>Modular Architecture</h3>
+        </div>
+
+        <div class="arch-grid">
+          <div class="arch-card">
+            <div class="arch-card-icon">✓</div>
+            <h4>validators.js</h4>
+            <p>Input validation logic with custom rules and error messages</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">⚠️</div>
+            <h4>error-handler.js</h4>
+            <p>Error categorization, formatting, and user-friendly messaging</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">📊</div>
+            <h4>progress-manager.js</h4>
+            <p>Progress state management with smooth animations</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">🌐</div>
+            <h4>api-client.js</h4>
+            <p>HTTP communication layer with request/response handling</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">📝</div>
+            <h4>html-template.js</h4>
+            <p>Template generation with dynamic content rendering</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">🎨</div>
+            <h4>style-loader.js</h4>
+            <p>CSS management with modular style injection</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">💅</div>
+            <h4>*.css modules</h4>
+            <p>Separated stylesheets for buttons, progress, badges, etc.</p>
+          </div>
+
+          <div class="arch-card">
+            <div class="arch-card-icon">🎯</div>
+            <h4>simulation-launcher.js</h4>
+            <p>Main orchestrator coordinating all modules</p>
+          </div>
+        </div>
+
+        <div class="tech-links">
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components" target="_blank" class="tech-link">
+            Web Components API
+          </a>
+          <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules" target="_blank" class="tech-link">
+            ES Modules
+          </a>
+          <a href="https://web.dev/custom-elements-v1/" target="_blank" class="tech-link">
+            Custom Elements
+          </a>
+          <a href="https://developer.mozilla.org/en-US/docs/Web/API/ShadowRoot" target="_blank" class="tech-link">
+            Shadow DOM
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="#docs">Documentation</a>
+        <span class="footer-divider">•</span>
+        <a href="#api">API Reference</a>
+        <span class="footer-divider">•</span>
+        <a href="#support">Support</a>
+      </div>
+      <small class="footer-copy">
+        &copy; 2026 Sim Engine Pro. Built with Web Components & Spring Boot.
+      </small>
+    </div>
+  </footer>
 
   <!-- Import the modular web component -->
   <script type="module" src="./components/simulation-launcher/simulation-launcher.js"></script>

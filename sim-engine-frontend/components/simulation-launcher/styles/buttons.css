@@ -1,38 +1,132 @@
 /**
- * Button Styles
+ * Button Styles - Modern Gradient Design
  */
 
 .button-group {
   display: flex;
   justify-content: center;
   gap: 1rem;
+  margin-top: 0.5rem;
 }
 
 button {
   cursor: pointer;
-  background: #4f8ef7;
-  color: #fff;
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
   border: none;
-  border-radius: 8px;
-  padding: 0.75rem 2.5rem;
+  border-radius: 10px;
+  padding: 0.875rem 3rem;
   font-size: 1rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
-  transition: background 0.18s, transform 0.1s;
-  min-width: 200px;
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+  min-width: 220px;
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.1),
+    0 0 0 0 rgba(102, 126, 234, 0);
+  overflow: hidden;
+}
+
+button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #93c5fd 0%, #c4b5fd 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s ease, height 0.6s ease;
 }
 
 button:hover:not(:disabled) {
-  background: #6aa3ff;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.5),
+    0 4px 6px -2px rgba(0, 0, 0, 0.1),
+    0 0 20px rgba(102, 126, 234, 0.5);
+}
+
+button:hover:not(:disabled)::before {
+  opacity: 1;
 }
 
 button:active:not(:disabled) {
   transform: translateY(0);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.1);
+}
+
+button:active:not(:disabled)::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
 }
 
 button:disabled {
-  opacity: 0.55;
+  opacity: 0.4;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+button:disabled::before {
+  opacity: 0;
+}
+
+/* Focus styles for accessibility */
+button:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 3px;
+}
+
+/* Loading state animation */
+button.loading {
+  pointer-events: none;
+}
+
+button.loading::before {
+  opacity: 0.7;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  button {
+    min-width: 100%;
+    padding: 0.75rem 2rem;
+    font-size: 0.9375rem;
+  }
+
+  .button-group {
+    flex-direction: column;
+    width: 100%;
+  }
 }
 

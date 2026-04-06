@@ -92,7 +92,7 @@ else Validation Passes
         component -> component : Enable button
         deactivate component
 
-    else Request Timeout (>30s)
+    else Request Timeout (>60s)
         fetch --> component : AbortError
         deactivate fetch
         component -> component : _getErrorDetails(error)

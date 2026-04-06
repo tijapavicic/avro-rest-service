@@ -3,25 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sim Engine</title>
+  <title>Sim Engine Pro | Advanced Simulation Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <script type="module" src="components/simulation-launcher.js"></script>
 </head>
 <body>
+  <!-- Animated background -->
+  <div class="bg-gradient"></div>
+  <div class="bg-pattern"></div>
+
   <header class="app-header">
-    <span class="logo">⚙ Sim Engine</span>
+    <div class="header-content">
+      <div class="logo">
+        <svg class="logo-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div class="logo-text">
+          <span class="logo-title">Sim Engine</span>
+          <span class="logo-subtitle">Pro</span>
+        </div>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active">Dashboard</button>
+        <button class="nav-btn">Analytics</button>
+        <button class="nav-btn">Settings</button>
+      </nav>
+    </div>
   </header>
 
   <main class="app-main">
     <section class="hero">
-      <h1>Simulation Control Panel</h1>
-      <p class="subtitle">Submit a job to the simulation backend and track its status in real time.</p>
+      <div class="hero-badge">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="8" r="8" fill="url(#badge-gradient)"/>
+          <circle cx="8" cy="8" r="4" fill="white"/>
+          <defs>
+            <linearGradient id="badge-gradient" x1="0" y1="0" x2="16" y2="16">
+              <stop offset="0%" stop-color="#60A5FA"/>
+              <stop offset="100%" stop-color="#A78BFA"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>Advanced Simulation Platform</span>
+      </div>
+      <h1 class="hero-title">
+        Simulation Control <span class="gradient-text">Center</span>
+      </h1>
+      <p class="subtitle">
+        Launch high-performance simulations with real-time monitoring and comprehensive analytics.
+        Built for precision, designed for scale.
+      </p>
       <simulation-launcher backend-url="http://localhost:8082/api/simulations"></simulation-launcher>
     </section>
   </main>
 
   <footer class="app-footer">
-    <small>sim-engine-frontend &mdash; Web Components &mdash; 2026</small>
+    <div class="footer-content">
+      <div class="footer-links">
+        <a href="#docs">Documentation</a>
+        <span class="footer-divider">•</span>
+        <a href="#api">API Reference</a>
+        <span class="footer-divider">•</span>
+        <a href="#support">Support</a>
+      </div>
+      <small class="footer-copy">
+        &copy; 2026 Sim Engine Pro. Built with Web Components & Spring Boot.
+      </small>
+    </div>
   </footer>
 </body>
 </html>

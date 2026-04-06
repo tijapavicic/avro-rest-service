@@ -1,5 +1,5 @@
 /**
- * Parameter Table Styles
+ * Parameter Table Styles - Modern Grid Design
  */
 
 .params-section {
@@ -7,75 +7,153 @@
 }
 
 .params-section h3 {
-  font-size: 0.95rem;
-  color: #B4D7E8;
-  margin-bottom: 1rem;
+  font-size: 1rem;
   font-weight: 600;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1.25rem;
   text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.params-section h3::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  border-radius: 2px;
 }
 
 .params-table {
   width: 100%;
   border-collapse: collapse;
-  background: #0f1117;
-  border: 1px solid #2e3347;
-  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(71, 85, 105, 0.3);
+  border-radius: 12px;
   overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .params-table th,
 .params-table td {
-  padding: 0.75rem 1rem;
+  padding: 1rem 1.25rem;
   text-align: left;
-  border-bottom: 1px solid #2e3347;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.2);
 }
 
 .params-table thead {
-  background: #1a1d27;
+  background: linear-gradient(135deg,
+    rgba(96, 165, 250, 0.1) 0%,
+    rgba(167, 139, 250, 0.1) 100%);
+  position: relative;
+}
+
+.params-table thead::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(96, 165, 250, 0.5) 50%,
+    transparent 100%);
 }
 
 .params-table th {
-  font-size: 0.8rem;
+  font-size: 0.8125rem;
   font-weight: 600;
-  color: #B4D7E8;
+  color: #93c5fd;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .params-table tbody tr:last-child td {
   border-bottom: none;
 }
 
+.params-table tbody tr {
+  transition: all 0.2s ease;
+}
+
 .params-table tbody tr:hover {
-  background: #1a1d27;
+  background: rgba(96, 165, 250, 0.05);
 }
 
 .param-name {
-  color: #E0BBE4;
+  color: #c4b5fd;
   font-weight: 600;
-  font-family: monospace;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-size: 0.9375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.param-name::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(96, 165, 250, 0.6);
 }
 
 .param-input {
-  background: #0f1117;
-  border: 1px solid #4f8ef7;
-  border-radius: 6px;
-  color: #e2e8f0;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.9rem;
-  font-family: monospace;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1.5px solid rgba(96, 165, 250, 0.3);
+  border-radius: 8px;
+  color: #f1f5f9;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  font-weight: 500;
   width: 100%;
-  max-width: 150px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  max-width: 180px;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.param-input:hover:not(:focus) {
+  border-color: rgba(96, 165, 250, 0.5);
+  background: rgba(15, 23, 42, 0.8);
 }
 
 .param-input:focus {
   outline: none;
-  border-color: #6aa3ff;
-  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.1);
+  border-color: #60a5fa;
+  background: rgba(15, 23, 42, 0.9);
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.2),
+    0 0 0 3px rgba(96, 165, 250, 0.15),
+    0 0 12px rgba(96, 165, 250, 0.3);
+  transform: translateY(-1px);
 }
 
-.param-input:hover:not(:focus) {
-  border-color: #6aa3ff;
+.param-input::placeholder {
+  color: #64748b;
+}
+
+/* Responsive Design */
+@media (max-width: 640px) {
+  .params-table th,
+  .params-table td {
+    padding: 0.75rem 1rem;
+  }
+
+  .param-input {
+    max-width: 100%;
+    font-size: 0.875rem;
+  }
+
+  .param-name {
+    font-size: 0.875rem;
+  }
 }
 
