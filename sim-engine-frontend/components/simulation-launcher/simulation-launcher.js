@@ -182,9 +182,32 @@ class SimulationLauncher extends HTMLElement {
     console.log('[SimulationLauncher] Success:', data);
   }
 
-  /* ── Business Logic ─────────────────────────────────── */
+  /**
+   * Emit analytics event
+   */
+  _emitAnalyticsEvent(jobData, success) {
+    const endTime = performance.now();
+    const startTime = this._requestStartTime || endTime;
+    const responseTime = Math.round(endTime - startTime);
 
+    const event = new CustomEvent('simulation-submitted', {
+      bubbles: true,
+      composed: true,
+      detail: {
+        jobData: jobData,
+        responseTime: responseTime,
+        success: success
+      }
+    });
+
+    document.dispatchEvent(event);
+  }
+
+  /**
+   * Business Logic
+   */
   async _handleLaunch() {
+    this._requestStartTime = performance.now();
     this._setLoading(true);
 
     try {
@@ -263,6 +286,9 @@ class SimulationLauncher extends HTMLElement {
     await this._sleep(300);
 
     this._showSuccess(data);
+
+    // Emit success event for analytics
+    this._emitAnalyticsEvent(data, true);
   }
 
   async _handleError(error) {
@@ -272,6 +298,9 @@ class SimulationLauncher extends HTMLElement {
     }
 
     this.progressManager.updateStage('FAILED');
+
+    // Emit error event for analytics
+    this._emitAnalyticsEvent({ error: error.message || 'Unknown error' }, false);
 
     // Get error details
     let errorDetails;

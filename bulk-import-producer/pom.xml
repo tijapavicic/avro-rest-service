@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.example</groupId>
+        <groupId>com.example.avro</groupId>
         <artifactId>avro-rest-service</artifactId>
         <version>0.0.2-SNAPSHOT</version>
     </parent>
@@ -16,6 +16,13 @@
     <description>Producer module for CSV bulk import - accepts uploads and initiates processing</description>
 
     <dependencies>
+        <!-- Bulk Import Consumer (for shared processing classes) -->
+        <dependency>
+            <groupId>com.example.avro</groupId>
+            <artifactId>bulk-import-consumer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Spring Boot WebFlux -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,6 +45,12 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-core</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Actuator (provides MeterRegistry) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
         <!-- Commons CSV for parsing -->

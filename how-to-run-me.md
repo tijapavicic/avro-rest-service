@@ -178,13 +178,37 @@ Quick copy-paste command file:
 
 1. Start frontend and backend using section 4 or section 4.1.
 2. Open `http://localhost:3000`.
-3. Click **Launch Simulation**.
-4. Confirm response panel shows:
-   - `status: SUBMITTED`
-   - a generated `jobId`
-   - JSON with `acceptedAt`
+3. **Dashboard** (default view):
+   - Click **Launch Simulation**.
+   - Confirm response panel shows:
+     - `status: SUBMITTED`
+     - a generated `jobId`
+     - JSON with `acceptedAt`
+4. **Analytics** tab:
+   - View real-time statistics (total, success rate, avg response time)
+   - Check status distribution chart
+   - View hourly activity chart
+   - Review recent jobs table
+5. **Settings** tab:
+   - Configure API endpoint
+   - Set default parameters
+   - Enable/disable analytics
+   - Configure advanced options
+   - Save changes
 
 If button call fails, verify backend is running on `8082` and check CORS config in `sim-engine-backend/src/main/java/com/example/avro/config/CorsConfig.java`.
+
+### 5.1.1 Frontend Features
+
+The frontend includes three main views:
+
+- **Dashboard** - Launch simulations with parameter table and progress bar
+- **Analytics** - Real-time metrics, charts, and job history
+- **Settings** - Configuration panel for API, defaults, and preferences
+
+All data is stored in browser localStorage and persists across sessions.
+
+For detailed usage guide, see `sim-engine-frontend/ANALYTICS-SETTINGS-GUIDE.md`.
 
 ### 5.2 API test with curl
 

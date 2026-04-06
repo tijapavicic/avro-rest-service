@@ -6,7 +6,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.example</groupId>
+        <groupId>com.example.avro</groupId>
         <artifactId>avro-rest-service</artifactId>
         <version>0.0.2-SNAPSHOT</version>
     </parent>
@@ -48,6 +48,11 @@
         </dependency>
 
         <!-- Resilience4j for circuit breaker -->
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-retry</artifactId>
+            <version>2.1.0</version>
+        </dependency>
         <dependency>
             <groupId>io.github.resilience4j</groupId>
             <artifactId>resilience4j-reactor</artifactId>

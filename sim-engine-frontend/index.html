@@ -8,7 +8,11 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="analytics-settings.css" />
   <script type="module" src="components/simulation-launcher.js"></script>
+  <script src="components/view-router.js"></script>
+  <script src="components/analytics-manager.js"></script>
+  <script src="components/settings-manager.js"></script>
 </head>
 <body>
   <!-- Animated background -->
@@ -29,15 +33,16 @@
         </div>
       </div>
       <nav class="header-nav">
-        <button class="nav-btn active">Dashboard</button>
-        <button class="nav-btn">Analytics</button>
-        <button class="nav-btn">Settings</button>
+        <button class="nav-btn" id="nav-dashboard">Dashboard</button>
+        <button class="nav-btn" id="nav-analytics">Analytics</button>
+        <button class="nav-btn" id="nav-settings">Settings</button>
       </nav>
     </div>
   </header>
 
   <main class="app-main">
-    <section class="hero">
+    <!-- Dashboard View -->
+    <section class="hero view-container" id="dashboard-view">
       <div class="hero-badge">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="8" fill="url(#badge-gradient)"/>
@@ -60,6 +65,16 @@
       </p>
       <simulation-launcher backend-url="http://localhost:8082/api/simulations"></simulation-launcher>
     </section>
+
+    <!-- Analytics View -->
+    <section class="hero view-container" id="analytics-view">
+      <div id="analytics-content"></div>
+    </section>
+
+    <!-- Settings View -->
+    <section class="hero view-container" id="settings-view">
+      <div id="settings-content"></div>
+    </section>
   </main>
 
   <footer class="app-footer">
@@ -76,6 +91,46 @@
       </small>
     </div>
   </footer>
+
+  <script>
+    // Initialize managers
+    window.analyticsManager = new AnalyticsManager();
+    window.settingsManager = new SettingsManager();
+    window.router = new ViewRouter();
+
+    // Register views
+    router.registerView('dashboard', document.getElementById('dashboard-view'));
+    router.registerView('analytics', document.getElementById('analytics-view'));
+    router.registerView('settings', document.getElementById('settings-view'));
+
+    // Register navigation buttons
+    router.registerNavButton('dashboard', document.getElementById('nav-dashboard'));
+    router.registerNavButton('analytics', document.getElementById('nav-analytics'));
+    router.registerNavButton('settings', document.getElementById('nav-settings'));
+
+    // Initialize from URL hash or default to dashboard
+    router.initFromHash();
+
+    // Render analytics and settings on first load
+    analyticsManager.render('analytics-content');
+    settingsManager.render('settings-content');
+
+    // Apply saved settings
+    settingsManager.applySettings();
+
+    // Listen for simulation submissions to record analytics
+    document.addEventListener('simulation-submitted', (event) => {
+      const { jobData, responseTime, success } = event.detail;
+      if (settingsManager.settings.enableAnalytics) {
+        analyticsManager.recordSubmission(jobData, responseTime, success);
+      }
+    });
+
+    // Handle browser back/forward buttons
+    window.addEventListener('hashchange', () => {
+      router.initFromHash();
+    });
+  </script>
 </body>
 </html>
 
