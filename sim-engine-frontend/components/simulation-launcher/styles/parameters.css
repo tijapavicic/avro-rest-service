@@ -1,0 +1,81 @@
+/**
+ * Parameter Table Styles
+ */
+
+.params-section {
+  width: 100%;
+}
+
+.params-section h3 {
+  font-size: 0.95rem;
+  color: #B4D7E8;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.params-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0f1117;
+  border: 1px solid #2e3347;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.params-table th,
+.params-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #2e3347;
+}
+
+.params-table thead {
+  background: #1a1d27;
+}
+
+.params-table th {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #B4D7E8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.params-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.params-table tbody tr:hover {
+  background: #1a1d27;
+}
+
+.param-name {
+  color: #E0BBE4;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.param-input {
+  background: #0f1117;
+  border: 1px solid #4f8ef7;
+  border-radius: 6px;
+  color: #e2e8f0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  font-family: monospace;
+  width: 100%;
+  max-width: 150px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.param-input:focus {
+  outline: none;
+  border-color: #6aa3ff;
+  box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.1);
+}
+
+.param-input:hover:not(:focus) {
+  border-color: #6aa3ff;
+}
+

@@ -1,0 +1,140 @@
+@startuml
+!theme plain
+skinparam backgroundColor #F8F9FA
+skinparam defaultFontName Arial
+
+' Pastel colors for modular architecture
+skinparam package {
+    BackgroundColor #E6F3FF
+    BorderColor #9370DB
+    FontSize 12
+    FontStyle bold
+}
+
+skinparam folder {
+    BackgroundColor #FFF9E6
+    BorderColor #FFD8B8
+}
+
+skinparam file {
+    BackgroundColor #F0E6FF
+    BorderColor #E0BBE4
+}
+
+skinparam component {
+    BackgroundColor #FFE6F0
+    BorderColor #FFB6D9
+}
+
+title Modular Architecture - Separation of Concerns\n
+
+package "Web Component" as wc #C1E1C1 {
+    [simulation-launcher.js] as main #B4D7E8
+    note right of main
+        **Main Orchestrator**
+        • Lifecycle management
+        • Event coordination
+        • Module integration
+        • Public API
+    end note
+}
+
+package "Business Logic (utils/)" as utils #FFE6F0 {
+    folder "validators.js" as val #E6F3FF {
+        component "ParameterValidator" as pval #B4D7E8
+        note right of pval
+            • Validation rules
+            • Range checks
+            • Type validation
+        end note
+    }
+
+    folder "error-handler.js" as err #E6F3FF {
+        component "ErrorHandler" as perr #B4D7E8
+        note right of perr
+            • Error categorization
+            • 10 error types
+            • Format for display
+        end note
+    }
+
+    folder "progress-manager.js" as prog #E6F3FF {
+        component "ProgressManager" as pprog #B4D7E8
+        note right of pprog
+            • State management
+            • Stage transitions
+            • Color gradients
+        end note
+    }
+
+    folder "api-client.js" as api #E6F3FF {
+        component "ApiClient" as papi #B4D7E8
+        note right of papi
+            • HTTP requests
+            • Timeout handling
+            • Correlation IDs
+        end note
+    }
+}
+
+package "Presentation (templates/)" as templates #FFF9E6 {
+    folder "html-template.js" as html #F0E6FF {
+        component "HtmlTemplate" as phtml #FFD8B8
+        note right of phtml
+            • HTML structure
+            • Component sections
+            • Template generation
+        end note
+    }
+
+    folder "style-loader.js" as style #F0E6FF {
+        component "StyleLoader" as pstyle #FFD8B8
+        note right of pstyle
+            • CSS loading
+            • Style aggregation
+            • Inline fallback
+        end note
+    }
+}
+
+package "Styles (styles/)" as styles #C1E1C1 {
+    file "main.css" as css1 #E6F3FF
+    file "parameters.css" as css2 #E6F3FF
+    file "progress.css" as css3 #E6F3FF
+    file "buttons.css" as css4 #E6F3FF
+    file "status.css" as css5 #E6F3FF
+    file "badges.css" as css6 #E6F3FF
+}
+
+' Dependencies
+main --> pval : validates with
+main --> perr : handles errors with
+main --> pprog : tracks progress with
+main --> papi : requests with
+main --> phtml : renders with
+main --> pstyle : styles with
+
+pstyle --> css1 : loads
+pstyle --> css2 : loads
+pstyle --> css3 : loads
+pstyle --> css4 : loads
+pstyle --> css5 : loads
+pstyle --> css6 : loads
+
+' External
+cloud "Backend API" as backend #E6F3FF
+database "Browser DOM" as dom #FFF9E6
+
+papi --> backend : HTTP POST
+main --> dom : Shadow DOM
+
+legend right
+    |= Color |= Layer |
+    | #C1E1C1 | Main Component |
+    | #FFE6F0 | Business Logic |
+    | #FFF9E6 | Presentation |
+    | #C1E1C1 | Styles |
+endlegend
+
+@enduml
+

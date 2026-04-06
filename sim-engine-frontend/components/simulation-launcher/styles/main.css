@@ -1,0 +1,20 @@
+/**
+ * Main Styles for simulation-launcher Web Component
+ * Pastel color scheme with dark theme
+ */
+
+:host {
+  display: block;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+.card {
+  background: #1a1d27;
+  border: 1px solid #2e3347;
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+

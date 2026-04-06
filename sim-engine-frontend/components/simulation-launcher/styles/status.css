@@ -1,0 +1,31 @@
+/**
+ * Status and Result Display Styles
+ */
+
+#status {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+#result {
+  background: #0f1117;
+  border: 1px solid #2e3347;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  font-size: 0.82rem;
+  font-family: monospace;
+  color: #e2e8f0;
+  width: 100%;
+  white-space: pre-wrap;
+  word-break: break-all;
+  display: none;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+#result.visible {
+  display: block;
+}
+
