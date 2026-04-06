@@ -2,9 +2,19 @@
 !theme plain
 
 skinparam component {
-    BackgroundColor<<public>> LightGreen
-    BackgroundColor<<resource>> LightCoral
-    BorderColor Black
+    BackgroundColor<<public>> #C1E1C1
+    BackgroundColor<<resource>> #FFB3BA
+    BorderColor #8B9DC3
+}
+
+skinparam package {
+    BackgroundColor #B4D7E8
+    BorderColor #8B9DC3
+}
+
+skinparam note {
+    BackgroundColor #FFF4CD
+    BorderColor #E6D5AC
 }
 
 title Keycloak Client Configurations\n(Public Client vs Resource Server)

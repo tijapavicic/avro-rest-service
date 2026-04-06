@@ -1,18 +1,39 @@
 @startuml keycloak-deployment
+@startuml keycloak-deployment
 !theme plain
-scale 0.3
 
 title Keycloak Deployment Architecture\n(Production Environment)
 
 skinparam node {
-    BackgroundColor<<server>> LightSkyBlue
-    BackgroundColor<<app>> LightGreen
-    BackgroundColor<<db>> Wheat
-    BorderColor Black
+    BackgroundColor<<server>> #B4D7E8
+    BackgroundColor<<app>> #C1E1C1
+    BackgroundColor<<db>> #FFD8B8
+    BorderColor #8B9DC3
 }
 
 skinparam cloud {
-    BackgroundColor<<internet>> LightYellow
+    BackgroundColor<<internet>> #FFF4CD
+    BorderColor #E6D5AC
+}
+
+skinparam component {
+    BackgroundColor #E0BBE4
+    BorderColor #C8A4D4
+}
+
+skinparam database {
+    BackgroundColor #FFD8B8
+    BorderColor #E6C1A0
+}
+
+skinparam note {
+    BackgroundColor #FFF4CD
+    BorderColor #E6D5AC
+}
+
+skinparam actor {
+    BackgroundColor #E0BBE4
+    BorderColor #C8A4D4
 }
 
 cloud "Internet" <<internet>> {

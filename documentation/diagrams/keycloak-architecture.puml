@@ -2,16 +2,16 @@
 !define RECTANGLE class
 
 skinparam rectangle {
-    BackgroundColor<<keycloak>> LightSkyBlue
-    BackgroundColor<<frontend>> LightGreen
-    BackgroundColor<<backend>> LightCoral
-    BorderColor Black
+    BackgroundColor<<keycloak>> #B4D7E8
+    BackgroundColor<<frontend>> #C1E1C1
+    BackgroundColor<<backend>> #FFB3BA
+    BorderColor #8B9DC3
     FontSize 12
 }
 
 skinparam note {
-    BackgroundColor LightYellow
-    BorderColor Black
+    BackgroundColor #FFF4CD
+    BorderColor #E6D5AC
 }
 
 title Keycloak Authentication Architecture\n(Web Components + Spring Boot)

@@ -1,13 +1,23 @@
 @startuml keycloak-components
+@startuml keycloak-components
 !theme plain
-scale 0.3
 
 skinparam component {
-    BackgroundColor<<keycloak>> LightSkyBlue
-    BackgroundColor<<frontend>> LightGreen
-    BackgroundColor<<backend>> LightCoral
-    BackgroundColor<<client>> Wheat
-    BorderColor Black
+    BackgroundColor<<keycloak>> #B4D7E8
+    BackgroundColor<<frontend>> #C1E1C1
+    BackgroundColor<<backend>> #FFB3BA
+    BackgroundColor<<client>> #FFD8B8
+    BorderColor #8B9DC3
+}
+
+skinparam database {
+    BackgroundColor #E0BBE4
+    BorderColor #C8A4D4
+}
+
+skinparam note {
+    BackgroundColor #FFF4CD
+    BorderColor #E6D5AC
 }
 
 title Keycloak System Components\n(Web Components + Spring Boot Resource Server)

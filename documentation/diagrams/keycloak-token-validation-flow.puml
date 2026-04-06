@@ -51,10 +51,10 @@ if (Signature Valid?) then (yes)
         :8. Authorize Request\nCheck @PreAuthorize\nannotations;
 
         if (Has Required Permission?) then (yes)
-            #LightGreen:200 OK\nProcess Request\nReturn Data;
+            #C1E1C1:200 OK\nProcess Request\nReturn Data;
             stop
         else (no)
-            #LightCoral:403 Forbidden\nInsufficient Permissions;
+            #FFB3BA:403 Forbidden\nInsufficient Permissions;
             note right
                 User authenticated but lacks
                 required role/permission
@@ -62,7 +62,7 @@ if (Signature Valid?) then (yes)
             stop
         endif
     else (no)
-        #LightCoral:401 Unauthorized\nClaims Invalid;
+        #FFB3BA:401 Unauthorized\nClaims Invalid;
         note right
             Possible issues:
             • Token expired
@@ -73,7 +73,7 @@ if (Signature Valid?) then (yes)
         stop
     endif
 else (no)
-    #LightCoral:401 Unauthorized\nInvalid Token Signature;
+    #FFB3BA:401 Unauthorized\nInvalid Token Signature;
     note right
         Token has been tampered with
         or signed by wrong key

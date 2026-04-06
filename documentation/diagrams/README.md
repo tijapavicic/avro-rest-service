@@ -1,5 +1,27 @@
 # Keycloak Authentication Flow Diagrams
 
+**Generated:** April 7, 2026  
+**Format:** PlantUML (.puml)  
+**Keycloak Version:** 26.5.7  
+**Color Palette:** 🎨 Soft Pastel (Professional)
+
+---
+
+## 🎨 Color Palette
+
+All diagrams use a carefully selected **pastel color palette** for a professional, easy-to-read appearance:
+
+- **Pastel Blue** (#B4D7E8) - Keycloak Server, Primary Components
+- **Pastel Green** (#C1E1C1) - Frontend, Success States
+- **Pastel Pink** (#FFB3BA) - Backend, Error States
+- **Pastel Peach** (#FFD8B8) - Databases, Storage
+- **Pastel Purple** (#E0BBE4) - Users, Actors
+- **Pastel Yellow** (#FFF4CD) - Notes, Annotations
+
+📖 See [COLOR-PALETTE.md](./COLOR-PALETTE.md) for complete color guide and customization options.
+
+---
+
 ## 📊 Generated Diagrams (6 Total)
 
 ### Regenerate:
@@ -331,4 +353,3 @@ All diagrams are generated from:
 
 **Version:** 1.0  
 **Last Updated:** April 7, 2026
-

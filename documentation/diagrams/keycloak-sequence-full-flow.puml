@@ -1,5 +1,25 @@
 @startuml keycloak-sequence-full-flow
 !theme plain
+
+skinparam backgroundColor #FEFEFE
+skinparam participant {
+    BackgroundColor #B4D7E8
+    BorderColor #8B9DC3
+}
+skinparam actor {
+    BackgroundColor #E0BBE4
+    BorderColor #C8A4D4
+}
+skinparam sequence {
+    ArrowColor #8B9DC3
+    LifeLineBorderColor #8B9DC3
+    LifeLineBackgroundColor #F0F0F0
+}
+skinparam note {
+    BackgroundColor #FFF4CD
+    BorderColor #E6D5AC
+}
+
 scale 0.3
 
 title Keycloak Authentication Flow - Authorization Code + PKCE\n(Full Flow with JWT Validation)
