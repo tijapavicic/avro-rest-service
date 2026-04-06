@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simulation Launcher - Test</title>
+  <style>
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ───────────────────────────────────────────── */
+    :root {
+      --color-bg:       #0f1117;
+      --color-surface:  #1a1d27;
+      --color-border:   #2e3347;
+      --color-accent:   #4f8ef7;
+      --color-success:  #C1E1C1;
+      --color-error:    #FFB3BA;
+      --color-text:     #e2e8f0;
+      --color-muted:    #94a3b8;
+    }
+
+    /* ── Base ─────────────────────────────────────────────── */
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ───────────────────────────────────────────── */
+    .app-header {
+      padding: 1rem 2rem;
+      border-bottom: 1px solid var(--color-border);
+      background: var(--color-surface);
+    }
+    .logo {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--color-accent);
+    }
+
+    /* ── Main ─────────────────────────────────────────────── */
+    .app-main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1.5rem;
+    }
+
+    /* ── Hero ─────────────────────────────────────────────── */
+    .hero {
+      text-align: center;
+      max-width: 720px;
+      width: 100%;
+    }
+    .hero h1 {
+      font-size: clamp(1.6rem, 4vw, 2.2rem);
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+    .subtitle {
+      color: var(--color-muted);
+      font-size: 0.95rem;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+
+    /* ── Footer ───────────────────────────────────────────── */
+    .app-footer {
+      text-align: center;
+      padding: 1rem;
+      color: var(--color-muted);
+      font-size: 0.78rem;
+      border-top: 1px solid var(--color-border);
+    }
+
+    /* ── Test Panel ───────────────────────────────────────── */
+    .test-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+    .test-panel h2 {
+      font-size: 0.95rem;
+      color: var(--color-accent);
+      margin-bottom: 0.75rem;
+    }
+    .test-panel ul {
+      list-style: none;
+      font-size: 0.85rem;
+      color: var(--color-muted);
+    }
+    .test-panel li {
+      padding: 0.25rem 0;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    .test-panel li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--color-success);
+      font-weight: bold;
+    }
+    .test-note {
+      background: #3b2f1f;
+      border-left: 3px solid #FFD8B8;
+      padding: 0.75rem 1rem;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      border-radius: 4px;
+    }
+    .test-note strong {
+      color: #FFD8B8;
+    }
+  </style>
+  <script type="module" src="components/simulation-launcher.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <span class="logo">⚙ Sim Engine - Test Mode</span>
+  </header>
+
+  <main class="app-main">
+    <section class="hero">
+      <h1>🧪 Component Test Page</h1>
+      <p class="subtitle">Test the simulation launcher web component with editable parameters and progress tracking.</p>
+
+      <div class="test-panel">
+        <h2>📋 Test Checklist</h2>
+        <ul>
+          <li>Verify parameter table displays with default values</li>
+          <li>Edit p1, q1, r1 values in the input fields</li>
+          <li>Click "Launch Simulation" button</li>
+          <li>Observe progress bar animation (0% → 100%)</li>
+          <li>Check color changes (Blue → Peach → Green)</li>
+          <li>Verify error handling (if backend offline)</li>
+        </ul>
+
+        <div class="test-note">
+          <strong>⚠️ Note:</strong> Backend must be running at
+          <code>https://localhost:8082/api/simulations</code>
+          or the request will fail (which is expected for testing error handling).
+        </div>
+      </div>
+
+      <!-- The actual component being tested -->
+      <simulation-launcher
+        backend-url="https://localhost:8082/api/simulations"
+        system-id="TEST-001">
+      </simulation-launcher>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>sim-engine-frontend &mdash; Test Page &mdash; 2026</small>
+  </footer>
+
+  <script>
+    // Test script to verify component functionality
+    console.log('🧪 Test Page Loaded');
+
+    // Wait for component to be defined
+    customElements.whenDefined('simulation-launcher').then(() => {
+      console.log('✅ simulation-launcher component is defined');
+
+      const launcher = document.querySelector('simulation-launcher');
+      console.log('📊 Component instance:', launcher);
+      console.log('📊 Default parameters:', launcher.parameters);
+
+      // Add test event listeners
+      launcher.addEventListener('click', () => {
+        console.log('🖱️ Component clicked');
+      });
+
+      console.log('✅ Test setup complete');
+    });
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,264 @@
+@startuml
+!theme plain
+skinparam backgroundColor #F8F9FA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+' Pastel color scheme
+skinparam sequence {
+    ArrowColor #6B8E23
+    ActorBorderColor #B0C4DE
+    ActorBackgroundColor #E6F3FF
+    ParticipantBorderColor #9370DB
+    ParticipantBackgroundColor #F0E6FF
+    LifeLineBorderColor #B0C4DE
+    LifeLineBackgroundColor #F5F5F5
+}
+
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor #FFD700
+}
+
+actor User as user
+participant "simulation-launcher\nWeb Component" as component
+participant "Validation\nEngine" as validator
+participant "Fetch API" as fetch
+participant "Backend\nAPI" as backend
+
+== Input Phase ==
+user -> component : Click "Launch Simulation"
+activate component
+
+component -> component : Disable button
+component -> component : Show progress bar (0%)
+component -> component : Clear previous results
+
+== Validation Phase ==
+component -> component : Update progress (0%, "Validating...")
+component -> validator : _validateParameters()
+activate validator
+
+alt Input Validation
+    validator -> validator : Check p1 range (0-1000)
+    validator -> validator : Check q1 range (0-1000)
+    validator -> validator : Check r1 range (0-100)
+    validator -> validator : Check all are numbers
+end
+
+alt Validation Fails
+    validator --> component : Return error list
+    deactivate validator
+    component -> component : _showValidationErrors()
+    component -> user : Display validation errors
+    note right
+        **VALIDATION_ERROR**
+        • Lists specific field errors
+        • User-friendly messages
+        • No network request sent
+    end note
+    component -> component : Hide progress bar
+    component -> component : Enable button
+    user <-- component : Ready for corrections
+    deactivate component
+else Validation Passes
+    validator --> component : Return empty list
+    deactivate validator
+
+    == Request Preparation Phase ==
+    component -> component : Update progress (10%, "Initializing...")
+    component -> component : Build payload with validated params
+    component -> component : Generate correlation ID
+
+    == Network Request Phase ==
+    component -> component : Update progress (20%, "Sending request...")
+    component -> component : Create AbortController (30s timeout)
+
+    component -> fetch : POST request\n+ timeout signal
+    activate fetch
+
+    alt Network Error (Cannot Connect)
+        fetch --> component : TypeError (fetch failed)
+        deactivate fetch
+        component -> component : _getErrorDetails(error)
+        component -> component : Update progress (0%, "Failed")
+        component -> user : Display NETWORK_ERROR
+        note right
+            **NETWORK_ERROR**
+            Suggestion: Check if backend
+            is running and URL is correct
+        end note
+        component -> component : Hide progress bar
+        component -> component : Enable button
+        deactivate component
+
+    else Request Timeout (>30s)
+        fetch --> component : AbortError
+        deactivate fetch
+        component -> component : _getErrorDetails(error)
+        component -> component : Update progress (0%, "Failed")
+        component -> user : Display TIMEOUT
+        note right
+            **TIMEOUT**
+            Request exceeded 30 seconds
+            Backend may be overloaded
+        end note
+        component -> component : Hide progress bar
+        component -> component : Enable button
+        deactivate component
+
+    else Network Success
+        fetch -> backend : POST /api/simulations
+        activate backend
+
+        == Response Processing Phase ==
+        component -> component : Update progress (50%, "Processing...")
+
+        alt HTTP 400 (Bad Request)
+            backend --> fetch : 400 Bad Request
+            deactivate backend
+            fetch --> component : Response (ok=false)
+            deactivate fetch
+            component -> component : Try parse error body
+            component -> component : _getErrorDetails(error, response)
+            component -> component : Update progress (0%, "Failed")
+            component -> user : Display BAD_REQUEST
+            note right
+                **BAD_REQUEST**
+                Server rejected parameters
+                Check values and try again
+            end note
+            component -> component : Hide progress bar
+            component -> component : Enable button
+            deactivate component
+
+        else HTTP 401/403 (Auth Error)
+            backend --> fetch : 401/403 Unauthorized
+            deactivate backend
+            fetch --> component : Response (ok=false)
+            deactivate fetch
+            component -> component : _getErrorDetails(error, response)
+            component -> component : Update progress (0%, "Failed")
+            component -> user : Display AUTH_ERROR
+            note right
+                **AUTH_ERROR**
+                Not authorized
+                Check credentials
+            end note
+            component -> component : Hide progress bar
+            component -> component : Enable button
+            deactivate component
+
+        else HTTP 404 (Not Found)
+            backend --> fetch : 404 Not Found
+            deactivate backend
+            fetch --> component : Response (ok=false)
+            deactivate fetch
+            component -> component : _getErrorDetails(error, response)
+            component -> component : Update progress (0%, "Failed")
+            component -> user : Display NOT_FOUND
+            note right
+                **NOT_FOUND**
+                Endpoint not found
+                Verify backend URL
+            end note
+            component -> component : Hide progress bar
+            component -> component : Enable button
+            deactivate component
+
+        else HTTP 429 (Rate Limit)
+            backend --> fetch : 429 Too Many Requests
+            deactivate backend
+            fetch --> component : Response (ok=false)
+            deactivate fetch
+            component -> component : _getErrorDetails(error, response)
+            component -> component : Update progress (0%, "Failed")
+            component -> user : Display RATE_LIMIT
+            note right
+                **RATE_LIMIT**
+                Too many requests
+                Wait before retrying
+            end note
+            component -> component : Hide progress bar
+            component -> component : Enable button
+            deactivate component
+
+        else HTTP 500+ (Server Error)
+            backend --> fetch : 500 Internal Server Error
+            deactivate backend
+            fetch --> component : Response (ok=false)
+            deactivate fetch
+            component -> component : _getErrorDetails(error, response)
+            component -> component : Update progress (0%, "Failed")
+            component -> user : Display SERVER_ERROR
+            note right
+                **SERVER_ERROR**
+                Backend service error
+                Try again later
+            end note
+            component -> component : Hide progress bar
+            component -> component : Enable button
+            deactivate component
+
+        else HTTP 200 (Success)
+            backend --> fetch : 200 OK + JSON
+            deactivate backend
+            fetch --> component : Response (ok=true)
+            deactivate fetch
+
+            == Response Validation Phase ==
+            alt JSON Parse Error
+                component -> component : Try parse JSON
+                component -> component : SyntaxError thrown
+                component -> component : _getErrorDetails(error)
+                component -> component : Update progress (0%, "Failed")
+                component -> user : Display PARSE_ERROR
+                note right
+                    **PARSE_ERROR**
+                    Invalid JSON response
+                    Backend misconfigured
+                end note
+                component -> component : Hide progress bar
+                component -> component : Enable button
+                deactivate component
+
+            else Invalid Response Structure
+                component -> component : Parse JSON successfully
+                component -> component : Check data is object
+                component -> component : Validation fails
+                component -> component : _getErrorDetails(error)
+                component -> component : Update progress (0%, "Failed")
+                component -> user : Display error
+                note right
+                    **Response structure error**
+                    Expected object, got primitive
+                end note
+                component -> component : Hide progress bar
+                component -> component : Enable button
+                deactivate component
+
+            else Valid Response
+                component -> component : Parse JSON successfully
+                component -> component : Validate structure passes
+
+                == Success Phase ==
+                component -> component : Update progress (100%, "Complete!")
+                component -> component : Extract jobId and status
+                component -> user : Display success message\n+ JSON response
+                note right
+                    ✅ **SUCCESS**
+                    Status: SUBMITTED
+                    Job ID: xxxxx
+                    Full response shown
+                end note
+                component -> component : Hide progress bar (after delay)
+                component -> component : Enable button
+                component -> component : Log success to console
+                deactivate component
+            end
+        end
+    end
+end
+
+@enduml
+

@@ -1,0 +1,187 @@
+@startuml
+!theme plain
+skinparam backgroundColor #F8F9FA
+skinparam defaultFontName Arial
+
+' Pastel colors
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #9370DB
+    FontSize 11
+}
+
+skinparam package {
+    BackgroundColor #FFF9E6
+    BorderColor #FFD8B8
+}
+
+skinparam note {
+    BackgroundColor #F0E6FF
+    BorderColor #E0BBE4
+}
+
+skinparam class {
+    BackgroundColor #FFE6F0
+    BorderColor #FFB6D9
+}
+
+package "simulation-launcher Web Component" {
+
+    [User Interface Layer] as UI #C1E1C1
+    note right of UI
+        • Parameter input fields (p1, q1, r1)
+        • Launch button
+        • Progress bar
+        • Status display
+        • Result display
+    end note
+
+    package "Validation Layer" {
+        [Input Validator] as validator #B4D7E8
+        note right of validator
+            **_validateParameters()**
+            • Range checks
+            • Type checks
+            • Format validation
+            Returns: error[]
+        end note
+    }
+
+    package "Network Layer" {
+        [Request Builder] as builder #FFD8B8
+        [Timeout Controller] as timeout #FFD8B8
+        [Fetch Handler] as fetcher #FFD8B8
+
+        note right of builder
+            **Builds payload:**
+            • systemId
+            • requestedAt
+            • parameters
+            • correlation ID
+        end note
+
+        note right of timeout
+            **AbortController**
+            • 30s timeout
+            • Auto-abort
+        end note
+    }
+
+    package "Error Processing Layer" {
+        [Error Analyzer] as analyzer #F0E6FF
+        [Error Classifier] as classifier #F0E6FF
+
+        note right of analyzer
+            **_getErrorDetails()**
+            Categorizes errors:
+            • Network errors
+            • Timeouts
+            • HTTP status codes
+            • Parse errors
+        end note
+
+        note right of classifier
+            **Error Types:**
+            • VALIDATION_ERROR
+            • NETWORK_ERROR
+            • TIMEOUT
+            • BAD_REQUEST (400)
+            • AUTH_ERROR (401/403)
+            • NOT_FOUND (404)
+            • RATE_LIMIT (429)
+            • SERVER_ERROR (500+)
+            • PARSE_ERROR
+            • UNKNOWN_ERROR
+        end note
+    }
+
+    package "Response Processing Layer" {
+        [Response Parser] as parser #C1E1C1
+        [Response Validator] as respValidator #C1E1C1
+
+        note right of parser
+            **JSON parsing:**
+            • Try/catch wrapper
+            • SyntaxError detection
+        end note
+
+        note right of respValidator
+            **Structure validation:**
+            • Object type check
+            • Required fields
+            • Data integrity
+        end note
+    }
+
+    package "Presentation Layer" {
+        [Error Display] as display #FFE6F0
+        [Success Display] as success #FFE6F0
+        [Progress Tracker] as progress #FFE6F0
+
+        note right of display
+            **_showError()**
+            • Error badge
+            • User message
+            • Suggestions
+            • Technical details
+        end note
+
+        note right of success
+            **Success display:**
+            • Status badge
+            • Job ID
+            • JSON response
+        end note
+
+        note right of progress
+            **_updateProgress()**
+            • 0%: Validating
+            • 10%: Initializing
+            • 20%: Sending
+            • 50%: Processing
+            • 100%: Complete
+        end note
+    }
+
+    [Logging System] as logger #FFF9E6
+    note right of logger
+        **console.log/error**
+        • Success logging
+        • Error logging
+        • Correlation IDs
+        • Debug info
+    end note
+}
+
+' External
+cloud "Backend API" as backend #E6F3FF
+database "Console Logs" as console #FFF9E6
+
+' Flow connections
+UI --> validator : User clicks Launch
+validator --> builder : Validation passes
+validator --> display : Validation fails
+
+builder --> timeout : Create controller
+timeout --> fetcher : Send with signal
+fetcher --> backend : POST request
+
+backend --> analyzer : Response/Error
+analyzer --> classifier : Categorize error
+
+classifier --> display : Error details
+parser --> respValidator : Parsed JSON
+respValidator --> success : Valid response
+respValidator --> analyzer : Invalid structure
+
+analyzer --> logger : Log error
+success --> logger : Log success
+
+display --> UI : Show error
+success --> UI : Show result
+progress --> UI : Update bar
+
+logger --> console : Write logs
+
+@enduml
+

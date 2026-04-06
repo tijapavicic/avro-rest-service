@@ -1,0 +1,227 @@
+@startuml
+!theme plain
+skinparam backgroundColor #F8F9FA
+skinparam defaultFontName Arial
+
+' Pastel colors
+skinparam state {
+    BackgroundColor #E6F3FF
+    BorderColor #9370DB
+    StartColor #C1E1C1
+    EndColor #FFB6D9
+}
+
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor #FFD700
+}
+
+[*] --> Idle : Component loaded
+
+state Idle {
+    state "Ready for Input" as ready #C1E1C1
+    [*] --> ready
+    ready : Button enabled
+    ready : Progress bar hidden
+    ready : Previous results shown
+}
+
+Idle --> Validating : User clicks Launch
+
+state Validating {
+    state "Checking Inputs" as checking #B4D7E8
+    [*] --> checking
+    checking : Progress: 0%
+    checking : Validate p1, q1, r1
+    checking : Check ranges & types
+}
+
+Validating --> ValidationError : Errors found
+Validating --> Initializing : Valid inputs
+
+state ValidationError {
+    state "Display Validation Errors" as valError #FFB6D9
+    [*] --> valError
+    valError : Show error list
+    valError : Red badge
+    valError : Progress bar hidden
+    valError : Button enabled
+}
+
+ValidationError --> Idle : User fixes inputs
+
+state Initializing {
+    state "Preparing Request" as preparing #FFD8B8
+    [*] --> preparing
+    preparing : Progress: 10%
+    preparing : Build payload
+    preparing : Generate correlation ID
+    preparing : Create AbortController
+}
+
+Initializing --> SendingRequest : Payload ready
+
+state SendingRequest {
+    state "Network Call" as network #B4D7E8
+    [*] --> network
+    network : Progress: 20%
+    network : POST to backend
+    network : 30s timeout active
+    network : Button disabled
+}
+
+SendingRequest --> NetworkError : Connection failed
+SendingRequest --> TimeoutError : Timeout (>30s)
+SendingRequest --> ProcessingResponse : Response received
+
+state NetworkError {
+    state "Cannot Connect" as netErr #FFB6D9
+    [*] --> netErr
+    netErr : TypeError caught
+    netErr : Show NETWORK_ERROR
+    netErr : Suggest check backend
+    netErr : Progress: 0% (Failed)
+}
+
+state TimeoutError {
+    state "Request Too Slow" as timeErr #FFB6D9
+    [*] --> timeErr
+    timeErr : AbortError caught
+    timeErr : Show TIMEOUT
+    timeErr : Suggest retry
+    timeErr : Progress: 0% (Failed)
+}
+
+NetworkError --> Idle : User retries
+TimeoutError --> Idle : User retries
+
+state ProcessingResponse {
+    state "Analyzing Response" as analyzing #FFD8B8
+    [*] --> analyzing
+    analyzing : Progress: 50%
+    analyzing : Check HTTP status
+    analyzing : Parse JSON
+    analyzing : Validate structure
+}
+
+ProcessingResponse --> HTTPError : Status code error
+ProcessingResponse --> ParseError : Invalid JSON
+ProcessingResponse --> ValidationResponseError : Invalid structure
+ProcessingResponse --> Success : Valid response
+
+state HTTPError {
+    state "HTTP Status Error" as httpErr #FFB6D9
+    [*] --> httpErr
+
+    state "400 Bad Request" as err400 #FFE6F0
+    state "401/403 Auth" as err401 #FFE6F0
+    state "404 Not Found" as err404 #FFE6F0
+    state "429 Rate Limit" as err429 #FFE6F0
+    state "500+ Server" as err500 #FFE6F0
+
+    httpErr --> err400 : 400
+    httpErr --> err401 : 401/403
+    httpErr --> err404 : 404
+    httpErr --> err429 : 429
+    httpErr --> err500 : 500+
+
+    err400 : BAD_REQUEST
+    err400 : Check parameters
+
+    err401 : AUTH_ERROR
+    err401 : Check credentials
+
+    err404 : NOT_FOUND
+    err404 : Verify URL
+
+    err429 : RATE_LIMIT
+    err429 : Wait & retry
+
+    err500 : SERVER_ERROR
+    err500 : Backend issue
+}
+
+state ParseError {
+    state "JSON Parse Failed" as parseErr #FFB6D9
+    [*] --> parseErr
+    parseErr : SyntaxError caught
+    parseErr : Show PARSE_ERROR
+    parseErr : Backend misconfigured
+    parseErr : Progress: 0% (Failed)
+}
+
+state ValidationResponseError {
+    state "Invalid Response Structure" as structErr #FFB6D9
+    [*] --> structErr
+    structErr : Not an object
+    structErr : Missing fields
+    structErr : Show error
+    structErr : Progress: 0% (Failed)
+}
+
+HTTPError --> Idle : User retries
+ParseError --> Idle : User retries
+ValidationResponseError --> Idle : User retries
+
+state Success {
+    state "Simulation Submitted" as submitted #C1E1C1
+    [*] --> submitted
+    submitted : Progress: 100%
+    submitted : Extract jobId
+    submitted : Show status badge
+    submitted : Display JSON
+    submitted : Log to console
+    submitted : Hide progress bar
+}
+
+Success --> Idle : Ready for next simulation
+
+note right of ValidationError
+    **Errors prevented before network call**
+    • Immediate feedback
+    • No backend load
+    • User-friendly messages
+end note
+
+note right of NetworkError
+    **Connection issues**
+    • Backend down
+    • Wrong URL
+    • CORS problems
+    • Firewall blocking
+end note
+
+note right of TimeoutError
+    **Performance issues**
+    • Slow backend
+    • Network lag
+    • Resource exhaustion
+    • Hung process
+end note
+
+note right of HTTPError
+    **Backend rejected request**
+    • Different handling per status
+    • Specific user guidance
+    • Actionable suggestions
+    • Technical details available
+end note
+
+note right of ParseError
+    **Backend returned invalid data**
+    • HTML error page
+    • Malformed JSON
+    • Empty response
+    • Configuration issue
+end note
+
+note right of Success
+    **Happy path**
+    • Request successful
+    • Valid response
+    • Job submitted
+    • User notified
+end note
+
+@enduml
+
