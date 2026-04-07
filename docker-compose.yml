@@ -80,7 +80,7 @@ services:
     depends_on:
       - sim-engine-backend
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
+      - "${FRONTEND_PORT:-3337}:3337"
     restart: unless-stopped
 
   kafka:

@@ -5,8 +5,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "npx serve . -l 3000",
-    "serve": "npx serve . -l 3000",
+    "start": "npx serve . -l 3337",
+    "serve": "npx serve . -l 3337",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
