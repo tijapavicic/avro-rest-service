@@ -1,0 +1,181 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "links": [],
+  "panels": [
+    {
+      "title": "Request Rate (req/s) — all services",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job)",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Response Time p95 (ms) — all services",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "ms", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[1m])) by (le, job)) * 1000",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Error Rate (5xx) — all services",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) by (job)",
+          "legendFormat": "{{job}} 5xx",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Request Rate by URI — all services",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job, uri)",
+          "legendFormat": "{{job}} {{uri}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "JVM Heap Used (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "decmbytes", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024",
+          "legendFormat": "{{job}} — {{id}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "JVM Threads — live",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "CPU Usage (%)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "percentunit", "min": 0, "max": 1 },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "process_cpu_usage",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Service Up/Down",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "1": { "text": "UP", "color": "green" } } },
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" } } }
+          ],
+          "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "expr": "up",
+          "legendFormat": "{{job}}",
+          "refId": "A"
+        }
+      ],
+      "options": { "graphMode": "none", "textMode": "auto" }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["spring-boot", "avro-rest-service", "traffic"],
+  "templating": {
+    "list": [
+      {
+        "current": { "selected": false, "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0,
+        "includeAll": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-30m", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Avro REST Service — Traffic Overview",
+  "uid": "avro-rest-traffic",
+  "version": 1
+}
+

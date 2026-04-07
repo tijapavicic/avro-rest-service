@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "sim-engine-backend"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["sim-engine-backend:8082"]
+        labels:
+          service: "sim-engine-backend"
+
+  - job_name: "large-payload-webflux"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["large-payload-webflux:8085"]
+        labels:
+          service: "large-payload-webflux"
+
+  - job_name: "bulk-import-producer"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["bulk-import-producer:8080"]
+        labels:
+          service: "bulk-import-producer"
+
+  - job_name: "calculation-engine"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["calculation-engine:8083"]
+        labels:
+          service: "calculation-engine"
+
+  - job_name: "simulation-engine"
+    metrics_path: "/actuator/prometheus"
+    static_configs:
+      - targets: ["simulation-engine:8084"]
+        labels:
+          service: "simulation-engine"
+

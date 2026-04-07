@@ -1,21 +1,27 @@
 ################################################################################
 #  docker-compose.yml  – avro-rest-service
 #
-#  Generated based on actual runtime dependency analysis (2026-04-07).
-#
 #  Infrastructure:
-#    ┌──────────┐     used by     ┌────────────────────┐
-#    │  Kafka   │ ◄────────────── │  sim-engine-backend │
-#    └──────────┘                 └────────────────────┘
 #    ┌──────────┐     used by     ┌──────────────────────┐
 #    │ MongoDB  │ ◄────────────── │  bulk-import-producer │
 #    └──────────┘                 └──────────────────────┘
 #
-#  Standalone (no external infra):
-#    - calculation-engine
-#    - simulation-engine
-#    - large-payload-webflux
-#    - sim-engine-frontend  (depends on sim-engine-backend for API)
+#  Observability:
+#    ┌────────────┐  scrapes   ┌─────────────────────────────────┐
+#    │ Prometheus │ ◄───────── │  all 5 Spring Boot services     │
+#    └─────┬──────┘            │  /actuator/prometheus            │
+#          │                   └─────────────────────────────────┘
+#          ▼
+#    ┌──────────┐
+#    │ Grafana  │  → http://localhost:3000  (admin / admin)
+#    └──────────┘
+#
+#  Standalone services:
+#    - sim-engine-backend    :8082
+#    - calculation-engine    :8083
+#    - simulation-engine     :8084
+#    - large-payload-webflux :8085
+#    - sim-engine-frontend   :3337  (depends on sim-engine-backend API)
 ################################################################################
 
 name: avro-rest-service
@@ -81,7 +87,39 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # ─────────────── Services that NEED infrastructure ──────────────────────────
+  # ────────────────────────────── Observability ───────────────────────────────
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    container_name: prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=7d"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    container_name: grafana
+    depends_on:
+      - prometheus
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+
+  # ──────────────── Application services ──────────────────────────────────────
 
   sim-engine-backend:
     build:
@@ -182,4 +220,8 @@ services:
 
 volumes:
   mongodb_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
     driver: local
