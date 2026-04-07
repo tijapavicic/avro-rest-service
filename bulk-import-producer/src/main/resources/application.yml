@@ -11,6 +11,8 @@ server:
 spring:
   application:
     name: bulk-import-service
+  reactor:
+    context-propagation: auto
   
   # MongoDB Configuration
   data:

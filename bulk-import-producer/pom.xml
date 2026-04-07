@@ -53,6 +53,13 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- Micrometer Context Propagation (MDC across reactive thread boundaries) -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>context-propagation</artifactId>
+            <version>1.1.1</version>
+        </dependency>
+
         <!-- Commons CSV for parsing -->
         <dependency>
             <groupId>org.apache.commons</groupId>
