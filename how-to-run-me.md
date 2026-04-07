@@ -9,12 +9,14 @@ Current runnable components:
 - `sim-engine-frontend`: static web UI
 - `sim-engine-backend`: Spring Boot REST API (`POST /api/simulations`)
 - `large-payload-webflux`: Spring WebFlux large-payload API (`POST /api/payloads/ingest-gzip`, `POST /api/payloads/ingest-ndjson`)
+- `bulk-import-producer`: Spring Boot reactive CSV bulk import API with MongoDB backend (`POST /api/v1/import/csv`, `GET /api/v1/import/jobs`)
 - `calculation-engine`: Spring Boot worker scaffold (starts, no public HTTP API yet)
 - `simulation-engine`: Spring Boot worker scaffold (starts, no public HTTP API yet)
 
-Support module:
+Support modules:
 
 - `avro-model`: shared Avro classes used by Java modules
+- `bulk-import-consumer`: shared CSV processing classes used by bulk-import-producer
 
 ## 2) Prerequisites
 
@@ -103,7 +105,9 @@ Default ports:
 - calculation-engine: `http://localhost:8083`
 - simulation-engine: `http://localhost:8084`
 - large-payload-webflux: `http://localhost:8085`
+- bulk-import-producer: `http://localhost:8090`
 - kafka broker: `localhost:29092`
+- mongodb: `localhost:27017`
 
 Compose also starts `kafka-init` (one-shot container) that creates topic `logging-test-topic`.
 `sim-engine-backend` publishes structured Avro traffic logs to this topic for API traffic.
@@ -121,6 +125,14 @@ Quick actuator health check:
 
 ```zsh
 curl -i http://localhost:8082/actuator/health
+curl -i http://localhost:8085/actuator/health
+curl -i http://localhost:8090/actuator/health
+```
+
+For a comprehensive port status check, use the automated script:
+
+```zsh
+./scripts/list-ports.sh --all
 ```
 
 If local ports are busy, override host ports when starting:
@@ -311,6 +323,51 @@ Expected:
 - JSON response with `itemsProcessed`
 
 To call the WebFlux module instead, replace `8082` with `8085`.
+
+### 5.2.3 Bulk CSV import test
+
+The `bulk-import-producer` service provides an asynchronous CSV import API backed by MongoDB. It's designed for large datasets (500K+ rows).
+
+#### Upload a CSV file:
+
+```zsh
+# Create a test CSV file
+cat > /tmp/test-data.csv << 'EOF'
+id,name,value,category
+1,Item A,100,Category1
+2,Item B,200,Category2
+3,Item C,150,Category1
+EOF
+
+# Upload the CSV file
+curl -i -X POST http://localhost:8090/api/v1/import/csv \
+  -F "file=@/tmp/test-data.csv"
+```
+
+Expected:
+
+- HTTP `202 Accepted`
+- JSON response with `jobId`, `status`, `statusUrl`
+
+#### Check job status:
+
+```zsh
+# Replace JOB_ID with the actual jobId from upload response
+curl -i http://localhost:8090/api/v1/import/jobs/JOB_ID
+```
+
+#### List all jobs:
+
+```zsh
+curl -i http://localhost:8090/api/v1/import/jobs
+```
+
+#### Check metrics:
+
+```zsh
+curl -i http://localhost:8090/actuator/metrics
+curl -i http://localhost:8090/actuator/prometheus
+```
 
 ### 5.3 Verify scaffold services started
 
