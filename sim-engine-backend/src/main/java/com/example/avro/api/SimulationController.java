@@ -1,5 +1,6 @@
 package com.example.avro.api;
 
+import io.micrometer.core.annotation.Timed;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -25,6 +26,7 @@ public class SimulationController {
     private static final Logger log = LoggerFactory.getLogger(SimulationController.class);
 
     @PostMapping
+    @Timed(value = "simulation.submit", description = "Time taken to submit a simulation job")
     public ResponseEntity<SimulationResponse> submit(@Valid @RequestBody SimulationRequest request, HttpServletRequest httpRequest) {
         log.info("Simulation submit received: systemId={}", request.getSystemId());
         httpRequest.setAttribute(TrafficLoggingInterceptor.SYSTEM_ID_ATTRIBUTE, request.getSystemId());
@@ -39,4 +41,3 @@ public class SimulationController {
         return ResponseEntity.accepted().body(response);
     }
 }
-

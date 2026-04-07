@@ -4,6 +4,7 @@ import com.example.avro.service.LargePayloadIngestService;
 import com.example.avro.service.PayloadTooLargeException;
 import com.example.avro.service.PayloadValidationException;
 import com.example.avro.service.UnsupportedPayloadEncodingException;
+import io.micrometer.core.annotation.Timed;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterInputStream;
@@ -46,6 +47,7 @@ public class LargePayloadIngestController {
     }
 
     @PostMapping(path = "/ingest-gzip", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    @Timed(value = "payload.ingest.gzip", description = "Time taken to ingest gzip JSON payload")
     public Mono<ResponseEntity<LargePayloadIngestResponse>> ingestGzip(ServerHttpRequest request) {
         log.info("Gzip payload ingest started: contentLength={}", request.getHeaders().getContentLength());
         return readRequestBody(request)
@@ -66,6 +68,7 @@ public class LargePayloadIngestController {
     }
 
     @PostMapping(path = "/ingest-ndjson", consumes = "application/x-ndjson", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Timed(value = "payload.ingest.ndjson", description = "Time taken to ingest NDJSON payload")
     public Mono<ResponseEntity<LargePayloadIngestResponse>> ingestNdjson(ServerHttpRequest request) {
         log.info("NDJSON payload ingest started: contentLength={}", request.getHeaders().getContentLength());
         String contentEncoding = request.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING);

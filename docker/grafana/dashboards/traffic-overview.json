@@ -10,16 +10,9 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "reqps", "min": 0 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job)",
-          "legendFormat": "{{job}}",
-          "refId": "A"
-        }
+        { "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job)", "legendFormat": "{{job}}", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
@@ -28,16 +21,9 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "ms", "min": 0 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[1m])) by (le, job)) * 1000",
-          "legendFormat": "{{job}}",
-          "refId": "A"
-        }
+        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "{{job}}", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
@@ -46,16 +32,9 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "reqps", "min": 0 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) by (job)",
-          "legendFormat": "{{job}} 5xx",
-          "refId": "A"
-        }
+        { "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) by (job)", "legendFormat": "{{job}} 5xx", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
@@ -64,77 +43,139 @@
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "reqps", "min": 0 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job, uri)",
-          "legendFormat": "{{job}} {{uri}}",
-          "refId": "A"
-        }
+        { "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job, uri)", "legendFormat": "{{job}} {{uri}}", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
     {
+      "title": "── @Timed Endpoint Metrics ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "title": "Simulation Submit — rate & p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(simulation_submit_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(simulation_submit_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
+        { "expr": "sum(rate(simulation_submit_seconds_count[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Payload Ingest Gzip — rate & p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(payload_ingest_gzip_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(payload_ingest_gzip_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
+        { "expr": "sum(rate(payload_ingest_gzip_seconds_count[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Payload Ingest NDJSON — rate & p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 17 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(payload_ingest_ndjson_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(payload_ingest_ndjson_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
+        { "expr": "sum(rate(payload_ingest_ndjson_seconds_count[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Bulk Import — CSV Upload rate & p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 25 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(import_csv_upload_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(import_csv_upload_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p50", "refId": "B" },
+        { "expr": "sum(rate(import_csv_upload_seconds_count[1m]))", "legendFormat": "req/s", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Bulk Import — Job Status rate & p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 25 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(import_job_status_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
+        { "expr": "sum(rate(import_job_status_seconds_count[1m]))", "legendFormat": "req/s", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "Bulk Import — List Jobs rate & p95",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 25 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(import_jobs_list_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
+        { "expr": "sum(rate(import_jobs_list_seconds_count[1m]))", "legendFormat": "req/s", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
+    },
+    {
+      "title": "── JVM & System ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
       "title": "JVM Heap Used (MB)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "decmbytes", "min": 0 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "decmbytes", "min": 0 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024",
-          "legendFormat": "{{job}} — {{id}}",
-          "refId": "A"
-        }
+        { "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024", "legendFormat": "{{job}} — {{id}}", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
     {
       "title": "JVM Threads — live",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "short", "min": 0 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "jvm_threads_live_threads",
-          "legendFormat": "{{job}}",
-          "refId": "A"
-        }
+        { "expr": "jvm_threads_live_threads", "legendFormat": "{{job}}", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
     {
       "title": "CPU Usage (%)",
       "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 24 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": {
-        "defaults": { "unit": "percentunit", "min": 0, "max": 1 },
-        "overrides": []
-      },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
       "targets": [
-        {
-          "expr": "process_cpu_usage",
-          "legendFormat": "{{job}}",
-          "refId": "A"
-        }
+        { "expr": "process_cpu_usage", "legendFormat": "{{job}}", "refId": "A" }
       ],
       "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
     },
     {
       "title": "Service Up/Down",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 24 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
         "defaults": {
@@ -147,11 +188,7 @@
         "overrides": []
       },
       "targets": [
-        {
-          "expr": "up",
-          "legendFormat": "{{job}}",
-          "refId": "A"
-        }
+        { "expr": "up", "legendFormat": "{{job}}", "refId": "A" }
       ],
       "options": { "graphMode": "none", "textMode": "auto" }
     }
@@ -176,6 +213,5 @@
   "timezone": "browser",
   "title": "Avro REST Service — Traffic Overview",
   "uid": "avro-rest-traffic",
-  "version": 1
+  "version": 2
 }
-
