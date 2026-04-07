@@ -9,16 +9,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="analytics-settings.css" />
-
-  <!-- Core Services (New Architecture) -->
-  <script type="module" src="services/storage-service.js"></script>
-  <script type="module" src="services/event-bus.js"></script>
-  <script type="module" src="services/analytics-service.js"></script>
-  <script type="module" src="services/settings-service.js"></script>
-  <script type="module" src="services/router-service.js"></script>
-
-  <!-- Web Component -->
-  <script type="module" src="components/simulation-launcher.js"></script>
 </head>
 <body>
   <!-- Animated background -->
@@ -39,7 +29,7 @@
         </div>
       </div>
       <nav class="header-nav">
-        <button class="nav-btn" id="nav-dashboard">Dashboard</button>
+        <button class="nav-btn active" id="nav-dashboard">Dashboard</button>
         <button class="nav-btn" id="nav-analytics">Analytics</button>
         <button class="nav-btn" id="nav-settings">Settings</button>
       </nav>
@@ -47,8 +37,8 @@
   </header>
 
   <main class="app-main">
-    <!-- Dashboard View -->
-    <section class="hero view-container" id="dashboard-view">
+    <!-- Dashboard View (visible by default via inline style) -->
+    <section class="hero view-container" id="dashboard-view" style="display: block;">
       <div class="hero-badge">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="8" fill="url(#badge-gradient)"/>
@@ -69,7 +59,10 @@
         Launch high-performance simulations with real-time monitoring and comprehensive analytics.
         Built for precision, designed for scale.
       </p>
-      <simulation-launcher backend-url="http://localhost:8082/api/simulations"></simulation-launcher>
+      <simulation-launcher
+        backend-url="http://localhost:8082/api/simulations"
+        system-id="SYS-001">
+      </simulation-launcher>
     </section>
 
     <!-- Analytics View -->
@@ -86,17 +79,20 @@
   <footer class="app-footer">
     <div class="footer-content">
       <div class="footer-links">
-        <a href="#docs">Documentation</a>
+        <a href="javascript:void(0)">Documentation</a>
         <span class="footer-divider">•</span>
-        <a href="#api">API Reference</a>
+        <a href="javascript:void(0)">API Reference</a>
         <span class="footer-divider">•</span>
-        <a href="#support">Support</a>
+        <a href="javascript:void(0)">Support</a>
       </div>
       <small class="footer-copy">
-        &copy; 2026 Sim Engine Pro. Built with Web Components & Spring Boot.
+        &copy; 2026 Sim Engine Pro. Built with Web Components &amp; Spring Boot.
       </small>
     </div>
   </footer>
+
+  <!-- Web Component (monolithic version) -->
+  <script type="module" src="components/simulation-launcher.js"></script>
 
   <script type="module">
     // Import services
@@ -118,35 +114,49 @@
     window.settingsManager = settingsService;
     window.router = routerService;
 
-    // Register routes with the new router service
+    // ── View helpers ──────────────────────────────────────
+    const views = {
+      dashboard:  document.getElementById('dashboard-view'),
+      analytics:  document.getElementById('analytics-view'),
+      settings:   document.getElementById('settings-view')
+    };
+
+    function showView(name) {
+      Object.values(views).forEach(el => { if (el) el.style.display = 'none'; });
+      if (views[name]) views[name].style.display = 'block';
+
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      const activeBtn = document.getElementById(`nav-${name}`);
+      if (activeBtn) activeBtn.classList.add('active');
+    }
+
+    // ── Register routes ───────────────────────────────────
     routerService
       .registerRoute('dashboard', {
-        element: document.getElementById('dashboard-view'),
+        element: views.dashboard,
         title: 'Dashboard - Sim Engine Pro',
         onEnter: () => {
           console.log('[Router] Entered dashboard');
         }
       })
       .registerRoute('analytics', {
-        element: document.getElementById('analytics-view'),
+        element: views.analytics,
         title: 'Analytics - Sim Engine Pro',
         onEnter: () => {
           console.log('[Router] Entered analytics');
-          // Render analytics using the new service
           analyticsService.render('analytics-content');
         }
       })
       .registerRoute('settings', {
-        element: document.getElementById('settings-view'),
+        element: views.settings,
         title: 'Settings - Sim Engine Pro',
         onEnter: () => {
           console.log('[Router] Entered settings');
-          // Render settings using the new service
           settingsService.render('settings-content');
         }
       });
 
-    // Set up navigation button click handlers
+    // ── Navigation ────────────────────────────────────────
     document.getElementById('nav-dashboard')?.addEventListener('click', (e) => {
       e.preventDefault();
       routerService.navigateTo('dashboard');
@@ -162,53 +172,35 @@
       routerService.navigateTo('settings');
     });
 
-    // Update active button state when route changes
+    // Sync nav-button highlight on route change
     eventBus.on('router:navigated', (event) => {
-      const { to } = event.data;
-
-      // Update nav button states
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-      });
-
-      const activeBtn = document.getElementById(`nav-${to}`);
-      if (activeBtn) {
-        activeBtn.classList.add('active');
-      }
+      showView(event.data.to);
     });
 
-    // Listen for simulation submissions to record analytics
+    // ── Analytics integration ─────────────────────────────
     eventBus.on('simulation:submitted', (event) => {
       const { jobData, responseTime, success } = event.data;
-
-      // Check if analytics is enabled in settings
       const settings = settingsService.getSettings();
       if (settings.enableAnalytics) {
         analyticsService.recordSubmission(jobData, responseTime, success);
       }
     });
 
-    // Apply saved settings on startup
+    // ── Initialise ────────────────────────────────────────
+    // Apply saved settings (backend-url, theme, etc.)
     settingsService._applySettings();
 
-    // Initialize router from URL hash or default to dashboard
+    // Show the correct initial view
     const hash = window.location.hash.substring(1);
     const initialRoute = hash && routerService.hasRoute(hash) ? hash : 'dashboard';
-    routerService.navigateTo(initialRoute);
-
-    // Handle browser back/forward buttons
-    window.addEventListener('hashchange', () => {
-      const newHash = window.location.hash.substring(1);
-      if (newHash && routerService.hasRoute(newHash)) {
-        routerService.navigateTo(newHash);
-      }
-    });
+    showView(initialRoute);                     // immediate – no race condition
+    routerService.navigateTo(initialRoute);     // also tell the router
 
     // Debug mode logging
     if (settingsService.getSetting('advanced.enableDebugMode')) {
       console.log('[DEBUG] Services initialized:', {
         storage: storageService,
-        eventBus: eventBus,
+        eventBus,
         analytics: analyticsService,
         settings: settingsService,
         router: routerService
