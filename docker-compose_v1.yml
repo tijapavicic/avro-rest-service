@@ -1,0 +1,164 @@
+name: avro-rest-service
+
+services:
+  sim-engine-backend:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: sim-engine-backend
+    image: avro-rest-service/sim-engine-backend:local
+    container_name: sim-engine-backend
+    depends_on:
+      kafka:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
+    ports:
+      - "${BACKEND_PORT:-8082}:8082"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      APP_KAFKA_LOGGING_TOPIC: logging-test-topic
+    restart: unless-stopped
+
+  calculation-engine:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: calculation-engine
+    image: avro-rest-service/calculation-engine:local
+    container_name: calculation-engine
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${CALCULATION_PORT:-8083}:8083"
+    environment:
+      SERVER_PORT: 8083
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    restart: unless-stopped
+
+  simulation-engine:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: simulation-engine
+    image: avro-rest-service/simulation-engine:local
+    container_name: simulation-engine
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${SIMULATION_PORT:-8084}:8084"
+    environment:
+      SERVER_PORT: 8084
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    restart: unless-stopped
+
+  large-payload-webflux:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: large-payload-webflux
+    image: avro-rest-service/large-payload-webflux:local
+    container_name: large-payload-webflux
+    ports:
+      - "${WEBFLUX_PORT:-8085}:8085"
+    environment:
+      SERVER_PORT: 8085
+    restart: unless-stopped
+
+  sim-engine-frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    image: avro-rest-service/sim-engine-frontend:local
+    container_name: sim-engine-frontend
+    depends_on:
+      - sim-engine-backend
+    ports:
+      - "${FRONTEND_PORT:-3337}:3337"
+    restart: unless-stopped
+
+  kafka:
+    image: apache/kafka:3.7.1
+    container_name: kafka
+    ports:
+      - "${KAFKA_PORT:-29092}:29092"
+    environment:
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  kafka-init:
+    image: apache/kafka:3.7.1
+    container_name: kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic logging-test-topic --partitions 1 --replication-factor 1
+    restart: "no"
+
+  # MongoDB for bulk import service
+  mongodb:
+    image: mongo:7.0
+    container_name: bulk-import-mongodb
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: bulk_import
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Bulk import producer service
+  bulk-import-producer:
+    build:
+      context: .
+      dockerfile: docker/service.Dockerfile
+      args:
+        MODULE_PATH: bulk-import-producer
+    image: avro-rest-service/bulk-import-producer:local
+    container_name: bulk-import-producer
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    ports:
+      - "${BULK_IMPORT_PORT:-8090}:8080"
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bulk_import
+      BULK_IMPORT_MAX_FILE_SIZE: 524288000
+      BULK_IMPORT_BATCH_SIZE: 1000
+    restart: unless-stopped
+
+volumes:
+  mongodb_data:
+    driver: local
+
