@@ -6,7 +6,7 @@
 #    │ MongoDB  │ ◄────────────── │  bulk-import-producer │
 #    └──────────┘                 └──────────────────────┘
 #
-#  Observability:
+#  Observability – Metrics:
 #    ┌────────────┐  scrapes   ┌─────────────────────────────────┐
 #    │ Prometheus │ ◄───────── │  all 5 Spring Boot services     │
 #    └─────┬──────┘            │  /actuator/prometheus            │
@@ -15,6 +15,16 @@
 #    ┌──────────┐
 #    │ Grafana  │  → http://localhost:3000  (admin / admin)
 #    └──────────┘
+#
+#  Observability – Logs (ELK):
+#    ┌──────────────────────┐  GELF/UDP   ┌───────────┐  index   ┌───────────────┐
+#    │  Spring Boot services│ ──────────► │ Logstash  │ ───────► │ Elasticsearch │
+#    └──────────────────────┘   :12201    └───────────┘          └───────┬───────┘
+#                                                                       │
+#                                                                 ┌─────▼─────┐
+#                                                                 │  Kibana   │
+#                                                                 │  :5601    │
+#                                                                 └───────────┘
 #
 #  Standalone services:
 #    - sim-engine-backend    :8082
@@ -79,6 +89,53 @@ services:
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
 
+  # ────────────────────────────── ELK Stack ────────────────────────────────────
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.14.3
+    container_name: elasticsearch
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "${ELASTICSEARCH_PORT:-9200}:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.14.3
+    container_name: logstash
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "${LOGSTASH_GELF_PORT:-12201}:12201/udp"
+    volumes:
+      - ./docker/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./docker/logstash/pipeline:/usr/share/logstash/pipeline:ro
+    environment:
+      LS_JAVA_OPTS: "-Xms256m -Xmx256m"
+    restart: unless-stopped
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.14.3
+    container_name: kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    ports:
+      - "${KIBANA_PORT:-5601}:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+    restart: unless-stopped
+
   # ──────────────── Application services ──────────────────────────────────────
 
   sim-engine-backend:
@@ -89,8 +146,18 @@ services:
         MODULE_PATH: sim-engine-backend
     image: avro-rest-service/sim-engine-backend:local
     container_name: sim-engine-backend
+    depends_on:
+      logstash:
+        condition: service_started
     ports:
       - "${BACKEND_PORT:-8082}:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:${LOGSTASH_GELF_PORT:-12201}"
+        tag: "sim-engine-backend"
     restart: unless-stopped
 
   bulk-import-producer:
@@ -104,12 +171,20 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      logstash:
+        condition: service_started
     ports:
       - "${BULK_IMPORT_PORT:-8090}:8080"
     environment:
       SPRING_DATA_MONGODB_URI: mongodb://mongodb:27017/bulk_import
       BULK_IMPORT_MAX_FILE_SIZE: 524288000
       BULK_IMPORT_BATCH_SIZE: 1000
+      SPRING_PROFILES_ACTIVE: production
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:${LOGSTASH_GELF_PORT:-12201}"
+        tag: "bulk-import-producer"
     restart: unless-stopped
 
   # ──────────────── Standalone services (no infra deps) ───────────────────────
@@ -122,10 +197,19 @@ services:
         MODULE_PATH: calculation-engine
     image: avro-rest-service/calculation-engine:local
     container_name: calculation-engine
+    depends_on:
+      logstash:
+        condition: service_started
     ports:
       - "${CALCULATION_PORT:-8083}:8083"
     environment:
       SERVER_PORT: 8083
+      SPRING_PROFILES_ACTIVE: production
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:${LOGSTASH_GELF_PORT:-12201}"
+        tag: "calculation-engine"
     restart: unless-stopped
 
   simulation-engine:
@@ -136,10 +220,19 @@ services:
         MODULE_PATH: simulation-engine
     image: avro-rest-service/simulation-engine:local
     container_name: simulation-engine
+    depends_on:
+      logstash:
+        condition: service_started
     ports:
       - "${SIMULATION_PORT:-8084}:8084"
     environment:
       SERVER_PORT: 8084
+      SPRING_PROFILES_ACTIVE: production
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:${LOGSTASH_GELF_PORT:-12201}"
+        tag: "simulation-engine"
     restart: unless-stopped
 
   large-payload-webflux:
@@ -150,10 +243,19 @@ services:
         MODULE_PATH: large-payload-webflux
     image: avro-rest-service/large-payload-webflux:local
     container_name: large-payload-webflux
+    depends_on:
+      logstash:
+        condition: service_started
     ports:
       - "${WEBFLUX_PORT:-8085}:8085"
     environment:
       SERVER_PORT: 8085
+      SPRING_PROFILES_ACTIVE: production
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://localhost:${LOGSTASH_GELF_PORT:-12201}"
+        tag: "large-payload-webflux"
     restart: unless-stopped
 
   # ───────────────────────────── Frontend ─────────────────────────────────────
@@ -176,4 +278,6 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  elasticsearch_data:
     driver: local
