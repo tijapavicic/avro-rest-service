@@ -30,46 +30,6 @@ services:
 
   # ─────────────────────────────── Infrastructure ──────────────────────────────
 
-  kafka:
-    image: apache/kafka:3.7.1
-    container_name: kafka
-    ports:
-      - "${KAFKA_PORT:-29092}:29092"
-    environment:
-      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
-      KAFKA_NODE_ID: "1"
-      KAFKA_PROCESS_ROLES: "broker,controller"
-      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:29092"
-      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka:9092,EXTERNAL://localhost:29092"
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT"
-      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
-      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
-      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
-      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    healthcheck:
-      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  kafka-init:
-    image: apache/kafka:3.7.1
-    container_name: kafka-init
-    depends_on:
-      kafka:
-        condition: service_healthy
-    entrypoint:
-      - /bin/sh
-      - -c
-      - |
-        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 \
-          --create --if-not-exists \
-          --topic logging-test-topic \
-          --partitions 1 --replication-factor 1
-    restart: "no"
 
   mongodb:
     image: mongo:7.0
@@ -129,16 +89,8 @@ services:
         MODULE_PATH: sim-engine-backend
     image: avro-rest-service/sim-engine-backend:local
     container_name: sim-engine-backend
-    depends_on:
-      kafka:
-        condition: service_healthy
-      kafka-init:
-        condition: service_completed_successfully
     ports:
       - "${BACKEND_PORT:-8082}:8082"
-    environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-      APP_KAFKA_LOGGING_TOPIC: logging-test-topic
     restart: unless-stopped
 
   bulk-import-producer:
