@@ -5,6 +5,7 @@ import com.example.avro.bulkimport.model.ImportResponse;
 import com.example.avro.bulkimport.model.ImportStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
@@ -37,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureWebTestClient(timeout = "PT30S")
 @ActiveProfiles("test")
+@Tag("integration")
 @DisplayName("Bulk Import Integration Tests")
 class BulkImportControllerIntegrationTest {
     
