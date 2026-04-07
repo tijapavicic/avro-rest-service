@@ -6,6 +6,8 @@ import java.util.UUID;
 import com.example.avro.config.TrafficLoggingInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,8 +22,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/simulations")
 public class SimulationController {
 
+    private static final Logger log = LoggerFactory.getLogger(SimulationController.class);
+
     @PostMapping
     public ResponseEntity<SimulationResponse> submit(@Valid @RequestBody SimulationRequest request, HttpServletRequest httpRequest) {
+        log.info("Simulation submit received: systemId={}", request.getSystemId());
         httpRequest.setAttribute(TrafficLoggingInterceptor.SYSTEM_ID_ATTRIBUTE, request.getSystemId());
         String jobId = "JOB-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         SimulationResponse response = new SimulationResponse(
@@ -30,6 +35,7 @@ public class SimulationController {
                 request.getSystemId(),
                 Instant.now()
         );
+        log.info("Simulation submitted: jobId={}, systemId={}", jobId, request.getSystemId());
         return ResponseEntity.accepted().body(response);
     }
 }

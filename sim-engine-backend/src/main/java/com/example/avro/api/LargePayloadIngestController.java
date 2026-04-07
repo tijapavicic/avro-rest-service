@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/payloads")
 public class LargePayloadIngestController {
 
+    private static final Logger log = LoggerFactory.getLogger(LargePayloadIngestController.class);
+
     private final LargePayloadIngestService ingestService;
     private final long maxDecompressedBytes;
 
@@ -38,27 +42,37 @@ public class LargePayloadIngestController {
 
     @PostMapping(path = "/ingest-gzip", consumes = "application/json", produces = "application/json")
     public ResponseEntity<LargePayloadIngestResponse> ingestGzip(HttpServletRequest request) throws IOException {
+        log.info("Gzip payload ingest started: contentLength={}", request.getContentLengthLong());
         try (InputStream bounded = openRequiredGzipStream(request)) {
             LargePayloadIngestResponse response = ingestService.ingest(bounded);
+            log.info("Gzip payload ingest accepted: scenarioId={}, systemId={}, items={}",
+                    response.scenarionID(), response.systemId(), response.itemsProcessed());
             return ResponseEntity.accepted().body(response);
         } catch (ZipException ex) {
+            log.warn("Gzip payload ingest failed: malformed gzip stream");
             throw new PayloadValidationException("Malformed gzip stream");
         } catch (IOException ex) {
+            log.warn("Gzip payload ingest failed: malformed or truncated payload");
             throw new PayloadValidationException("Malformed or truncated gzip JSON payload");
         }
     }
 
     @PostMapping(path = "/ingest-ndjson", consumes = "application/x-ndjson", produces = "application/json")
     public ResponseEntity<LargePayloadIngestResponse> ingestNdjson(HttpServletRequest request) throws IOException {
+        log.info("NDJSON payload ingest started: contentLength={}", request.getContentLengthLong());
         String contentEncoding = request.getHeader("Content-Encoding");
         boolean gzipEncoded = isGzipEncoding(contentEncoding);
         try (InputStream bounded = openNdjsonStream(request)) {
             LargePayloadIngestResponse response = ingestService.ingestNdjson(bounded);
+            log.info("NDJSON payload ingest accepted: scenarioId={}, systemId={}, items={}",
+                    response.scenarionID(), response.systemId(), response.itemsProcessed());
             return ResponseEntity.accepted().body(response);
         } catch (ZipException ex) {
+            log.warn("NDJSON payload ingest failed: malformed gzip stream");
             throw new PayloadValidationException("Malformed gzip stream");
         } catch (IOException ex) {
             if (gzipEncoded) {
+                log.warn("NDJSON payload ingest failed: malformed or truncated gzip payload");
                 throw new PayloadValidationException("Malformed or truncated gzip NDJSON payload");
             }
             throw ex;

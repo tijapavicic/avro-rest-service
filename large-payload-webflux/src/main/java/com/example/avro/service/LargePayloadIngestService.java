@@ -14,10 +14,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 @Service
 public class LargePayloadIngestService {
+
+    private static final Logger log = LoggerFactory.getLogger(LargePayloadIngestService.class);
 
     private static final int MAX_NDJSON_LINE_CHARS = 1_000_000;
 
@@ -25,6 +29,7 @@ public class LargePayloadIngestService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public LargePayloadIngestResponse ingest(InputStream payloadStream) throws IOException {
+        log.info("JSON payload parsing started");
         String scenarioId = null;
         String systemId = null;
         String date = null;
@@ -71,10 +76,12 @@ public class LargePayloadIngestService {
             throw new PayloadValidationException("Missing required field: items");
         }
 
+        log.info("JSON payload parsing complete: scenarioId={}, systemId={}, items={}", scenarioId, systemId, itemsProcessed);
         return new LargePayloadIngestResponse(scenarioId, systemId, date, itemsProcessed);
     }
 
     public LargePayloadIngestResponse ingestNdjson(InputStream payloadStream) throws IOException {
+        log.info("NDJSON payload parsing started");
         NdjsonMetadata metadata = null;
         long itemsProcessed = 0L;
         int lineNumber = 0;
@@ -101,6 +108,7 @@ public class LargePayloadIngestService {
             throw new PayloadValidationException("NDJSON payload must start with a metadata line");
         }
 
+        log.info("NDJSON payload parsing complete: scenarioId={}, systemId={}, items={}", metadata.scenarioId(), metadata.systemId(), itemsProcessed);
         return new LargePayloadIngestResponse(metadata.scenarioId(), metadata.systemId(), metadata.date(), itemsProcessed);
     }
 

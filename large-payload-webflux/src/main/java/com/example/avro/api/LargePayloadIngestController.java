@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
@@ -30,6 +32,8 @@ import reactor.core.scheduler.Schedulers;
 @RequestMapping("/api/payloads")
 public class LargePayloadIngestController {
 
+    private static final Logger log = LoggerFactory.getLogger(LargePayloadIngestController.class);
+
     private final LargePayloadIngestService ingestService;
     private final long maxDecompressedBytes;
 
@@ -43,14 +47,19 @@ public class LargePayloadIngestController {
 
     @PostMapping(path = "/ingest-gzip", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<LargePayloadIngestResponse>> ingestGzip(ServerHttpRequest request) {
+        log.info("Gzip payload ingest started: contentLength={}", request.getHeaders().getContentLength());
         return readRequestBody(request)
                 .flatMap(body -> Mono.fromCallable(() -> {
                     try (InputStream bounded = openRequiredGzipStream(request, body)) {
                         LargePayloadIngestResponse response = ingestService.ingest(bounded);
+                        log.info("Gzip payload ingest accepted: scenarioId={}, systemId={}, items={}",
+                                response.scenarionID(), response.systemId(), response.itemsProcessed());
                         return ResponseEntity.accepted().body(response);
                     } catch (ZipException ex) {
+                        log.warn("Gzip payload ingest failed: malformed gzip stream");
                         throw new PayloadValidationException("Malformed gzip stream");
                     } catch (IOException ex) {
+                        log.warn("Gzip payload ingest failed: malformed or truncated payload");
                         throw new PayloadValidationException("Malformed or truncated gzip JSON payload");
                     }
                 }).subscribeOn(Schedulers.boundedElastic()));
@@ -58,6 +67,7 @@ public class LargePayloadIngestController {
 
     @PostMapping(path = "/ingest-ndjson", consumes = "application/x-ndjson", produces = MediaType.APPLICATION_JSON_VALUE)
     public Mono<ResponseEntity<LargePayloadIngestResponse>> ingestNdjson(ServerHttpRequest request) {
+        log.info("NDJSON payload ingest started: contentLength={}", request.getHeaders().getContentLength());
         String contentEncoding = request.getHeaders().getFirst(HttpHeaders.CONTENT_ENCODING);
         boolean gzipEncoded = isGzipEncoding(contentEncoding);
 
@@ -65,13 +75,18 @@ public class LargePayloadIngestController {
                 .flatMap(body -> Mono.fromCallable(() -> {
                     try (InputStream bounded = openNdjsonStream(contentEncoding, body)) {
                         LargePayloadIngestResponse response = ingestService.ingestNdjson(bounded);
+                        log.info("NDJSON payload ingest accepted: scenarioId={}, systemId={}, items={}",
+                                response.scenarionID(), response.systemId(), response.itemsProcessed());
                         return ResponseEntity.accepted().body(response);
                     } catch (ZipException ex) {
+                        log.warn("NDJSON payload ingest failed: malformed gzip stream");
                         throw new PayloadValidationException("Malformed gzip stream");
                     } catch (IOException ex) {
                         if (gzipEncoded) {
+                            log.warn("NDJSON payload ingest failed: malformed or truncated gzip payload");
                             throw new PayloadValidationException("Malformed or truncated gzip NDJSON payload");
                         }
+                        log.warn("NDJSON payload ingest failed: malformed payload");
                         throw new PayloadValidationException("Malformed NDJSON payload");
                     }
                 }).subscribeOn(Schedulers.boundedElastic()));
