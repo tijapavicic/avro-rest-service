@@ -2,180 +2,16 @@
   "annotations": { "list": [] },
   "editable": true,
   "fiscalYearStartMonth": 0,
-  "graphTooltip": 1,
+  "graphTooltip": 2,
   "links": [],
+  "refresh": "15s",
   "panels": [
     {
-      "title": "Request Rate (req/s) — all services",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job)", "legendFormat": "{{job}}", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Response Time p95 (ms) — all services",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "{{job}}", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Error Rate (5xx) — all services",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "sum(rate(http_server_requests_seconds_count{status=~\"5..\"}[1m])) by (job)", "legendFormat": "{{job}} 5xx", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Request Rate by URI — all services",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "sum(rate(http_server_requests_seconds_count[1m])) by (job, uri)", "legendFormat": "{{job}} {{uri}}", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "── @Timed Endpoint Metrics ──",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 16 },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "title": "Simulation Submit — rate & p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 17 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(simulation_submit_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
-        { "expr": "histogram_quantile(0.50, sum(rate(simulation_submit_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
-        { "expr": "sum(rate(simulation_submit_seconds_count[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Payload Ingest Gzip — rate & p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 17 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(payload_ingest_gzip_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
-        { "expr": "histogram_quantile(0.50, sum(rate(payload_ingest_gzip_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
-        { "expr": "sum(rate(payload_ingest_gzip_seconds_count[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Payload Ingest NDJSON — rate & p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 17 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(payload_ingest_ndjson_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
-        { "expr": "histogram_quantile(0.50, sum(rate(payload_ingest_ndjson_seconds_bucket[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
-        { "expr": "sum(rate(payload_ingest_ndjson_seconds_count[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Bulk Import — CSV Upload rate & p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 25 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(import_csv_upload_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
-        { "expr": "histogram_quantile(0.50, sum(rate(import_csv_upload_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p50", "refId": "B" },
-        { "expr": "sum(rate(import_csv_upload_seconds_count[1m]))", "legendFormat": "req/s", "refId": "C" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Bulk Import — Job Status rate & p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 25 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(import_job_status_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
-        { "expr": "sum(rate(import_job_status_seconds_count[1m]))", "legendFormat": "req/s", "refId": "B" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Bulk Import — List Jobs rate & p95",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 25 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "histogram_quantile(0.95, sum(rate(import_jobs_list_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
-        { "expr": "sum(rate(import_jobs_list_seconds_count[1m]))", "legendFormat": "req/s", "refId": "B" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "── JVM & System ──",
-      "type": "row",
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 33 },
-      "collapsed": false,
-      "panels": []
-    },
-    {
-      "title": "JVM Heap Used (MB)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 34 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "decmbytes", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1024 / 1024", "legendFormat": "{{job}} — {{id}}", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "JVM Threads — live",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 34 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
-      "targets": [
-        { "expr": "jvm_threads_live_threads", "legendFormat": "{{job}}", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "CPU Usage (%)",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 42 },
-      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
-      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
-      "targets": [
-        { "expr": "process_cpu_usage", "legendFormat": "{{job}}", "refId": "A" }
-      ],
-      "options": { "legend": { "displayMode": "table", "placement": "bottom" } }
-    },
-    {
-      "title": "Service Up/Down",
+      "id": 1,
+      "title": "Service Health",
       "type": "stat",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 42 },
+      "description": "Prometheus scrape target status. GREEN = UP, RED = DOWN (scrape failing or container stopped).",
+      "gridPos": { "h": 4, "w": 15, "x": 0, "y": 0 },
       "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
       "fieldConfig": {
         "defaults": {
@@ -188,13 +24,376 @@
         "overrides": []
       },
       "targets": [
-        { "expr": "up", "legendFormat": "{{job}}", "refId": "A" }
+        { "expr": "up{job=~\"$service\"}", "legendFormat": "{{job}}", "refId": "A" }
       ],
-      "options": { "graphMode": "none", "textMode": "auto" }
+      "options": { "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+    {
+      "id": 2,
+      "title": "Uptime",
+      "type": "stat",
+      "description": "Process uptime since last restart. A sudden drop indicates a restart/crash.",
+      "gridPos": { "h": 4, "w": 9, "x": 15, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "s", "thresholds": { "steps": [{ "color": "red", "value": null }, { "color": "orange", "value": 300 }, { "color": "green", "value": 3600 }] } },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "process_uptime_seconds{job=~\"$service\"}", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "options": { "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } }
+    },
+
+    {
+      "id": 10,
+      "title": "── HTTP Traffic ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 4 },
+      "collapsed": false, "panels": []
+    },
+    {
+      "id": 11,
+      "title": "Request Rate (req/s)",
+      "type": "timeseries",
+      "description": "Total HTTP requests per second per service.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\"}[1m])) by (job)", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 12,
+      "title": "Response Time p50 / p95 / p99 (ms)",
+      "type": "timeseries",
+      "description": "HTTP response latency percentiles. Watch p99 for tail latency issues.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0, "custom": { "fillOpacity": 5 } }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p99 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "B" },
+        { "expr": "histogram_quantile(0.50, sum(rate(http_server_requests_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 13,
+      "title": "HTTP Status Distribution (req/s)",
+      "type": "timeseries",
+      "description": "Request rate broken down by status code class (2xx/4xx/5xx). Stacked view shows proportion of errors.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 5 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 30, "stacking": { "mode": "normal" } } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*2xx.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*4xx.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*5xx.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\", status=~\"2..\"}[1m])) by (job)", "legendFormat": "{{job}} 2xx", "refId": "A" },
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\", status=~\"4..\"}[1m])) by (job)", "legendFormat": "{{job}} 4xx", "refId": "B" },
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\", status=~\"5..\"}[1m])) by (job)", "legendFormat": "{{job}} 5xx", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 14,
+      "title": "Request Rate by Endpoint",
+      "type": "timeseries",
+      "description": "Per-URI breakdown. Identify hot endpoints and unexpected traffic patterns.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "reqps", "min": 0, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\"}[1m])) by (job, uri)", "legendFormat": "{{job}} {{uri}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 15,
+      "title": "5xx Error Rate",
+      "type": "timeseries",
+      "description": "Server errors per second. Red threshold at >0 to catch any 5xx immediately.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps", "min": 0,
+          "custom": { "fillOpacity": 15 },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 0.01 }] },
+          "color": { "mode": "continuous-reds" }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "sum(rate(http_server_requests_seconds_count{job=~\"$service\", status=~\"5..\"}[1m])) by (job)", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 20,
+      "title": "── @Timed Endpoint Metrics ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 21 },
+      "collapsed": false, "panels": []
+    },
+    {
+      "id": 21,
+      "title": "Simulation Submit — p50 / p95 / req/s",
+      "type": "timeseries",
+      "description": "Custom @Timed histogram for POST /api/simulations.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(simulation_submit_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(simulation_submit_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
+        { "expr": "sum(rate(simulation_submit_seconds_count{job=~\"$service\"}[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 22,
+      "title": "Payload Ingest Gzip — p50 / p95 / req/s",
+      "type": "timeseries",
+      "description": "Custom @Timed histogram for POST /api/payloads/ingest-gzip.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(payload_ingest_gzip_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(payload_ingest_gzip_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
+        { "expr": "sum(rate(payload_ingest_gzip_seconds_count{job=~\"$service\"}[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 23,
+      "title": "Payload Ingest NDJSON — p50 / p95 / req/s",
+      "type": "timeseries",
+      "description": "Custom @Timed histogram for POST /api/payloads/ingest-ndjson.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 22 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(payload_ingest_ndjson_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p95 {{job}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(payload_ingest_ndjson_seconds_bucket{job=~\"$service\"}[1m])) by (le, job)) * 1000", "legendFormat": "p50 {{job}}", "refId": "B" },
+        { "expr": "sum(rate(payload_ingest_ndjson_seconds_count{job=~\"$service\"}[1m])) by (job)", "legendFormat": "req/s {{job}}", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 24,
+      "title": "Bulk Import — CSV Upload",
+      "type": "timeseries",
+      "description": "Custom @Timed histogram for POST /api/v1/import/csv.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(import_csv_upload_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
+        { "expr": "histogram_quantile(0.50, sum(rate(import_csv_upload_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p50", "refId": "B" },
+        { "expr": "sum(rate(import_csv_upload_seconds_count[1m]))", "legendFormat": "req/s", "refId": "C" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 25,
+      "title": "Bulk Import — Job Status",
+      "type": "timeseries",
+      "description": "Custom @Timed histogram for GET /api/v1/import/jobs/{id}.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(import_job_status_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
+        { "expr": "sum(rate(import_job_status_seconds_count[1m]))", "legendFormat": "req/s", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 26,
+      "title": "Bulk Import — List Jobs",
+      "type": "timeseries",
+      "description": "Custom @Timed histogram for GET /api/v1/import/jobs.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 30 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "ms", "min": 0 }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.95, sum(rate(import_jobs_list_seconds_bucket[1m])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" },
+        { "expr": "sum(rate(import_jobs_list_seconds_count[1m]))", "legendFormat": "req/s", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 30,
+      "title": "── Logs & Errors ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 38 },
+      "collapsed": false, "panels": []
+    },
+    {
+      "id": 31,
+      "title": "Logback ERROR / WARN Events (per second)",
+      "type": "timeseries",
+      "description": "Rate of ERROR and WARN log events from Logback. Spikes here correlate with application issues.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 39 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "cps", "min": 0, "custom": { "fillOpacity": 15 } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*error.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*warn.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] }
+        ]
+      },
+      "targets": [
+        { "expr": "sum(rate(logback_events_total{job=~\"$service\", level=\"error\"}[1m])) by (job)", "legendFormat": "{{job}} error", "refId": "A" },
+        { "expr": "sum(rate(logback_events_total{job=~\"$service\", level=\"warn\"}[1m])) by (job)", "legendFormat": "{{job}} warn", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 32,
+      "title": "Logback Events by Level (per second)",
+      "type": "timeseries",
+      "description": "Full log level breakdown. Useful for spotting abnormal log volumes.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 39 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": { "unit": "cps", "min": 0, "custom": { "fillOpacity": 20, "stacking": { "mode": "normal" } } },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*error.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*warn.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*info.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byRegexp", "options": ".*debug.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] }
+        ]
+      },
+      "targets": [
+        { "expr": "sum(rate(logback_events_total{job=~\"$service\"}[1m])) by (job, level)", "legendFormat": "{{job}} {{level}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+
+    {
+      "id": 40,
+      "title": "── JVM ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "collapsed": false, "panels": []
+    },
+    {
+      "id": 41,
+      "title": "JVM Heap Utilization (%)",
+      "type": "timeseries",
+      "description": "Heap used / heap max. Sustained >85% indicates memory pressure.",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 48 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit", "min": 0, "max": 1,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.7 }, { "color": "red", "value": 0.85 }] },
+          "custom": { "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "sum(jvm_memory_used_bytes{job=~\"$service\", area=\"heap\"}) by (job) / sum(jvm_memory_max_bytes{job=~\"$service\", area=\"heap\"}) by (job)", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+    {
+      "id": 42,
+      "title": "JVM Heap Used (MB)",
+      "type": "timeseries",
+      "description": "Absolute heap memory used per memory pool. Sawtooth = healthy GC.",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 48 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "decmbytes", "min": 0, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "expr": "jvm_memory_used_bytes{job=~\"$service\", area=\"heap\"} / 1024 / 1024", "legendFormat": "{{job}} — {{id}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 43,
+      "title": "GC Pause Time (ms/s)",
+      "type": "timeseries",
+      "description": "Time spent in GC per second. Spikes >200ms/s cause latency jitter.",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 48 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms", "min": 0,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 200 }] },
+          "custom": { "fillOpacity": 15, "thresholdsStyle": { "mode": "line" } }
+        },
+        "overrides": []
+      },
+      "targets": [
+        { "expr": "sum(rate(jvm_gc_pause_seconds_sum{job=~\"$service\"}[1m])) by (job) * 1000", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 44,
+      "title": "JVM Threads — live",
+      "type": "timeseries",
+      "description": "Live thread count. A steady upward trend may indicate a thread leak.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "expr": "jvm_threads_live_threads{job=~\"$service\"}", "legendFormat": "{{job}}", "refId": "A" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
+    },
+
+    {
+      "id": 50,
+      "title": "── System ──",
+      "type": "row",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 64 },
+      "collapsed": false, "panels": []
+    },
+    {
+      "id": 51,
+      "title": "CPU Usage — process vs system",
+      "type": "timeseries",
+      "description": "Process CPU = JVM usage. System CPU = host/container total. Gap = other processes.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 65 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "expr": "process_cpu_usage{job=~\"$service\"}", "legendFormat": "{{job}} process", "refId": "A" },
+        { "expr": "system_cpu_usage{job=~\"$service\"}", "legendFormat": "{{job}} system", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max"] } }
+    },
+    {
+      "id": 52,
+      "title": "Open File Descriptors",
+      "type": "timeseries",
+      "description": "Open vs max FDs. Exhausting file descriptors causes connection failures.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 65 },
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0, "custom": { "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [
+        { "expr": "process_files_open_files{job=~\"$service\"}", "legendFormat": "{{job}} open", "refId": "A" },
+        { "expr": "process_files_max_files{job=~\"$service\"}", "legendFormat": "{{job}} max", "refId": "B" }
+      ],
+      "options": { "legend": { "displayMode": "table", "placement": "bottom", "calcs": ["mean", "max", "lastNotNull"] } }
     }
   ],
   "schemaVersion": 39,
-  "tags": ["spring-boot", "avro-rest-service", "traffic"],
+  "tags": ["spring-boot", "avro-rest-service", "traffic", "devops"],
   "templating": {
     "list": [
       {
@@ -205,13 +404,27 @@
         "options": [],
         "query": "prometheus",
         "type": "datasource"
+      },
+      {
+        "name": "service",
+        "label": "Service",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+        "query": "label_values(up, job)",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": { "selected": true, "text": "All", "value": "$__all" },
+        "refresh": 2,
+        "sort": 1,
+        "hide": 0
       }
     ]
   },
   "time": { "from": "now-30m", "to": "now" },
-  "timepicker": {},
+  "timepicker": { "refresh_intervals": ["5s", "10s", "15s", "30s", "1m"] },
   "timezone": "browser",
   "title": "Avro REST Service — Traffic Overview",
   "uid": "avro-rest-traffic",
-  "version": 2
+  "version": 3
 }

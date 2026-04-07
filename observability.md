@@ -28,13 +28,23 @@ All Spring Boot services expose metrics at `/actuator/prometheus`:
 
 Verify targets: http://localhost:9090/targets
 
-## Pre-provisioned Dashboard
+## Dashboard: Traffic Overview
 
-**Avro REST Service — Traffic Overview** is auto-loaded in Grafana and shows request rate, p95 latency, error rate, JVM heap, threads, CPU, and service health across all services.
+Auto-provisioned at **Dashboards → Avro REST Service — Traffic Overview**.
+
+Use the **Service** dropdown at the top to filter by one or more services.
+
+| Row | Panels |
+|-----|--------|
+| **Header** | Service Health (UP/DOWN), Uptime |
+| **HTTP Traffic** | Request rate, p50/p95/p99 latency, 2xx/4xx/5xx status distribution, per-endpoint breakdown, 5xx error rate (with threshold) |
+| **@Timed Endpoints** | Simulation Submit, Payload Ingest Gzip, Payload Ingest NDJSON, Bulk Import CSV Upload, Job Status, List Jobs |
+| **Logs & Errors** | Logback ERROR/WARN rate, log events by level (stacked) |
+| **JVM** | Heap utilization % (with 70%/85% thresholds), heap used MB, GC pause time (with 200ms threshold), live threads |
+| **System** | Process vs system CPU, open vs max file descriptors |
 
 ## Quick Start
 
 ```bash
 docker compose up -d prometheus grafana
 ```
-
