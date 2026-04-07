@@ -48,3 +48,13 @@ Use the **Service** dropdown at the top to filter by one or more services.
 ```bash
 docker compose up -d prometheus grafana
 ```
+### 🟢 P1 — Improvements (next sprint)
+
+| # | Topic | Action |
+|---|-------|--------|
+| 8 | **`@Timed` only on bulk-import** | Add `@Timed` annotations to `sim-engine-backend` and `large-payload-webflux` controllers so Prometheus captures per-endpoint latency histograms |
+| 9 | **Grafana alerting** | Add alert rules for 5xx error rate > 1% and p95 latency > 2s |
+| 10 | **Structured JSON logging** | Add `logstash-logback-encoder` for production — MDC keys become searchable JSON fields in ELK/Datadog |
+| 11 | **Inter-service header propagation** | Add `WebClient` exchange filter that copies `X-Transaction-Id` from MDC to outbound requests |
+
+---
