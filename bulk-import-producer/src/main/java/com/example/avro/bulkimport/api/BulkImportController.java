@@ -15,6 +15,8 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 /**
  * REST controller for bulk CSV import operations.
  * 
@@ -151,7 +153,7 @@ public class BulkImportController {
      */
     @GetMapping(value = "/jobs", produces = MediaType.APPLICATION_JSON_VALUE)
     @Timed(value = "import.jobs.list", description = "Time taken to list jobs")
-    public Mono<ResponseEntity<Object>> listJobs(
+    public Mono<ResponseEntity<List<ImportJob>>> listJobs(
             @RequestParam(required = false) String userId) {
         
         log.debug("Listing import jobs: userId={}", userId);
