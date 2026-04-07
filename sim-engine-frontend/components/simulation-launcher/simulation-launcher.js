@@ -190,17 +190,26 @@ class SimulationLauncher extends HTMLElement {
     const startTime = this._requestStartTime || endTime;
     const responseTime = Math.round(endTime - startTime);
 
-    const event = new CustomEvent('simulation-submitted', {
-      bubbles: true,
-      composed: true,
-      detail: {
-        jobData: jobData,
-        responseTime: responseTime,
-        success: success
-      }
-    });
-
-    document.dispatchEvent(event);
+    // Use EventBus if available (new architecture)
+    if (window.eventBus) {
+      window.eventBus.emit('simulation:submitted', {
+        jobData,
+        responseTime,
+        success
+      });
+    } else {
+      // Fallback to CustomEvent for backward compatibility
+      const event = new CustomEvent('simulation-submitted', {
+        bubbles: true,
+        composed: true,
+        detail: {
+          jobData,
+          responseTime,
+          success
+        }
+      });
+      document.dispatchEvent(event);
+    }
   }
 
   /**

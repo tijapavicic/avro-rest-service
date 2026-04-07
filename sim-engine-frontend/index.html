@@ -9,10 +9,16 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="analytics-settings.css" />
+
+  <!-- Core Services (New Architecture) -->
+  <script type="module" src="services/storage-service.js"></script>
+  <script type="module" src="services/event-bus.js"></script>
+  <script type="module" src="services/analytics-service.js"></script>
+  <script type="module" src="services/settings-service.js"></script>
+  <script type="module" src="services/router-service.js"></script>
+
+  <!-- Web Component -->
   <script type="module" src="components/simulation-launcher.js"></script>
-  <script src="components/view-router.js"></script>
-  <script src="components/analytics-manager.js"></script>
-  <script src="components/settings-manager.js"></script>
 </head>
 <body>
   <!-- Animated background -->
@@ -92,44 +98,124 @@
     </div>
   </footer>
 
-  <script>
-    // Initialize managers
-    window.analyticsManager = new AnalyticsManager();
-    window.settingsManager = new SettingsManager();
-    window.router = new ViewRouter();
+  <script type="module">
+    // Import services
+    import storageService from './services/storage-service.js';
+    import eventBus from './services/event-bus.js';
+    import analyticsService from './services/analytics-service.js';
+    import settingsService from './services/settings-service.js';
+    import routerService from './services/router-service.js';
 
-    // Register views
-    router.registerView('dashboard', document.getElementById('dashboard-view'));
-    router.registerView('analytics', document.getElementById('analytics-view'));
-    router.registerView('settings', document.getElementById('settings-view'));
+    // Make services globally accessible for debugging
+    window.storageService = storageService;
+    window.eventBus = eventBus;
+    window.analyticsService = analyticsService;
+    window.settingsService = settingsService;
+    window.routerService = routerService;
 
-    // Register navigation buttons
-    router.registerNavButton('dashboard', document.getElementById('nav-dashboard'));
-    router.registerNavButton('analytics', document.getElementById('nav-analytics'));
-    router.registerNavButton('settings', document.getElementById('nav-settings'));
+    // Backward compatibility (for migration period)
+    window.analyticsManager = analyticsService;
+    window.settingsManager = settingsService;
+    window.router = routerService;
 
-    // Initialize from URL hash or default to dashboard
-    router.initFromHash();
+    // Register routes with the new router service
+    routerService
+      .registerRoute('dashboard', {
+        element: document.getElementById('dashboard-view'),
+        title: 'Dashboard - Sim Engine Pro',
+        onEnter: () => {
+          console.log('[Router] Entered dashboard');
+        }
+      })
+      .registerRoute('analytics', {
+        element: document.getElementById('analytics-view'),
+        title: 'Analytics - Sim Engine Pro',
+        onEnter: () => {
+          console.log('[Router] Entered analytics');
+          // Render analytics using the new service
+          analyticsService.render('analytics-content');
+        }
+      })
+      .registerRoute('settings', {
+        element: document.getElementById('settings-view'),
+        title: 'Settings - Sim Engine Pro',
+        onEnter: () => {
+          console.log('[Router] Entered settings');
+          // Render settings using the new service
+          settingsService.render('settings-content');
+        }
+      });
 
-    // Render analytics and settings on first load
-    analyticsManager.render('analytics-content');
-    settingsManager.render('settings-content');
+    // Set up navigation button click handlers
+    document.getElementById('nav-dashboard')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      routerService.navigateTo('dashboard');
+    });
 
-    // Apply saved settings
-    settingsManager.applySettings();
+    document.getElementById('nav-analytics')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      routerService.navigateTo('analytics');
+    });
 
-    // Listen for simulation submissions to record analytics
-    document.addEventListener('simulation-submitted', (event) => {
-      const { jobData, responseTime, success } = event.detail;
-      if (settingsManager.settings.enableAnalytics) {
-        analyticsManager.recordSubmission(jobData, responseTime, success);
+    document.getElementById('nav-settings')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      routerService.navigateTo('settings');
+    });
+
+    // Update active button state when route changes
+    eventBus.on('router:navigated', (event) => {
+      const { to } = event.data;
+
+      // Update nav button states
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+
+      const activeBtn = document.getElementById(`nav-${to}`);
+      if (activeBtn) {
+        activeBtn.classList.add('active');
       }
     });
 
+    // Listen for simulation submissions to record analytics
+    eventBus.on('simulation:submitted', (event) => {
+      const { jobData, responseTime, success } = event.data;
+
+      // Check if analytics is enabled in settings
+      const settings = settingsService.getSettings();
+      if (settings.enableAnalytics) {
+        analyticsService.recordSubmission(jobData, responseTime, success);
+      }
+    });
+
+    // Apply saved settings on startup
+    settingsService._applySettings();
+
+    // Initialize router from URL hash or default to dashboard
+    const hash = window.location.hash.substring(1);
+    const initialRoute = hash && routerService.hasRoute(hash) ? hash : 'dashboard';
+    routerService.navigateTo(initialRoute);
+
     // Handle browser back/forward buttons
     window.addEventListener('hashchange', () => {
-      router.initFromHash();
+      const newHash = window.location.hash.substring(1);
+      if (newHash && routerService.hasRoute(newHash)) {
+        routerService.navigateTo(newHash);
+      }
     });
+
+    // Debug mode logging
+    if (settingsService.getSetting('advanced.enableDebugMode')) {
+      console.log('[DEBUG] Services initialized:', {
+        storage: storageService,
+        eventBus: eventBus,
+        analytics: analyticsService,
+        settings: settingsService,
+        router: routerService
+      });
+    }
+
+    console.log('✅ Sim Engine Pro loaded with service-oriented architecture');
   </script>
 </body>
 </html>
